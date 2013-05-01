@@ -17,6 +17,7 @@ function init(){
 	for( var i=0, end=width*height; i<end; i += Math.ceil(Math.random()*4) ){
 		livenodes.push(i);
 	}
+	console.log('livenodes.length',livenodes.length);
 	
 	render(livenodes,width,height,context);
 
@@ -82,9 +83,10 @@ function tick(liveNodes,width,height){
 		var n = numberOfNeigbours(node,liveNodes,width,height);
 		// console.log('node',node,'n',n);
 		
-		if( liveNodes.indexOf(node) > -1 ){ // If node is live
-			if( n < 2 ) kill.push(node);
-			else if ( n > 3 ) kill.push(node);
+		var nodeIndex = liveNodes.indexOf(node);
+		if( nodeIndex > -1 ){ // If node is live
+			if( n < 2 ) kill.push(nodeIndex);
+			else if ( n > 3 ) kill.push(nodeIndex);
 		} else if( n == 3 ) {
 			create.push(node);
 		}
@@ -92,16 +94,15 @@ function tick(liveNodes,width,height){
 	}
 	
 	// Kill nodes
-	for(var i=0,end=kill.length;i<end;i++){
-		var k = liveNodes.indexOf(kill[i]);
-		// console.log('kill', kill[i], 'at index', k);
-		//console.log(liveNodes,k);
-		liveNodes.splice(k,1);
+	for(var i=kill.length-1; i>-1; i--){
+		var k = kill[i];
+		if(liveNodes[k]) liveNodes.splice(k,1);
 	}
 	// Create nodes
 	// console.log('adding nodes',create);
 	liveNodes = liveNodes.concat(create);
-	//liveNodes.sort(compareNumbers).removeDuplicates();
+	liveNodes.sort(compareNumbers);
+	//.removeDuplicates();
 	
 	return liveNodes;
 }
