@@ -4,31 +4,22 @@ console.log('gol.js');
 var _delay = 100;
 
 function init(){
-	
 	console.log('init');
 	var canvas = document.getElementById('canvas');
 	var context = canvas.getContext('2d');
 	
-	//var width=8,height=8;
-	// var width=16,height=16;
-	// livenodes = [0,1,2,3,8,24,25,33];
-	//ln = ln.map(function(i){return i+8});
-	// console.log( numberOfNeigbours(9,ln,width,height) );
-	// console.log( numberOfNeigbours(4,ln,width,height) );
-	// console.log( numberOfNeigbours(7,ln,width,height) );
-	// console.log( numberOfNeigbours(16,ln,width,height) );
-	
-	var width=64,height=64;
-	//livenodes = [0,1,64,65,130,131,194,195];
+	var width=100,height=100;
 	var livenodes = [];
-	for(var i=0,end=width*height;i<end;i++){
-		if( Math.random() > 0.3 )livenodes.push(i);
+	/*for(var i=0,end=width*height;i<end;i++){
+		if( Math.random() > 0.3 ) livenodes.push(i);
+	}*/
+	// much faster and still gets the job done
+	for( var i=0, end=width*height; i<end; i += Math.ceil(Math.random()*4) ){
+		livenodes.push(i);
 	}
 	
 	render(livenodes,width,height,context);
-	// console.log('livenodes',livenodes);
-	//var test = [1,2,3];
-	//var interval = window.setInterval(tick, delay);
+
 	var btn = document.getElementById('_tick');
 	btn.addEventListener('click',function(){
 		// console.log('ln', livenodes);
@@ -39,6 +30,7 @@ function init(){
 	var btn2 = document.getElementById('start');
 	btn2.canvas = canvas;
 	btn2.addEventListener('click',function(){
+		//var interval = window.setInterval(tick, delay);
 		console.log(livenodes);
 	},false);
 	// console.log('init end grid.livenodes',livenodes);
@@ -75,19 +67,11 @@ function drawPoint(x,y,gridsize,context,color){
 }
 
 function tick(liveNodes,width,height){
-	// console.log('start',liveNodes);
-	// var size = width*height;
-	
 	// rules:
 	// Any live cell with fewer than two live neighbours dies, as if caused by under-population.
 	// Any live cell with two or three live neighbours lives on to the next generation.
 	// Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
 	// Any live cell with more than three live neighbours dies, as if by overcrowding.
-	
-	// 0-1 : dies
-	// 2-3 : no change
-	// 3   : creates new live cell
-	// 4-8 : dies
 	var kill = [];
 	var create = [];
 	var check = nodesToCheck(liveNodes, width, height);
@@ -98,11 +82,11 @@ function tick(liveNodes,width,height){
 		var n = numberOfNeigbours(node,liveNodes,width,height);
 		// console.log('node',node,'n',n);
 		
-		if( n == 3 ) {
-			create.push(node);
-		} else if( liveNodes.indexOf(node) > -1 ){ // If node is live
+		if( liveNodes.indexOf(node) > -1 ){ // If node is live
 			if( n < 2 ) kill.push(node);
 			else if ( n > 3 ) kill.push(node);
+		} else if( n == 3 ) {
+			create.push(node);
 		}
 		// todo, save the index instead and splice from end to zero, will save one indexOf
 	}
@@ -114,10 +98,10 @@ function tick(liveNodes,width,height){
 		//console.log(liveNodes,k);
 		liveNodes.splice(k,1);
 	}
-	// TODO: create nodes
+	// Create nodes
 	// console.log('adding nodes',create);
 	liveNodes = liveNodes.concat(create);
-	liveNodes.sort(compareNumbers).removeDuplicates();
+	//liveNodes.sort(compareNumbers).removeDuplicates();
 	
 	return liveNodes;
 }
