@@ -1,6 +1,6 @@
 'use strict';
 
-require("shims.js");
+//require(["shims.js"]);
 
 var game = {
 	context : null,
@@ -22,9 +22,18 @@ var game = {
 	rtc:0,
 	/** Timestamp from when start were called */
 	animStart:null,
+	/** Holds mouse position over the canvas */
+	mouse:[null,null],
 	
 	init : function(){
-		this.context = document.getElementById('game').getContext('2d');
+		var canvas = document.getElementById('game')
+		this.context = canvas.getContext('2d');
+		
+		canvas.addEventListener('mousemove',function(e){
+			game.mouse = [e.clientX, e.clientY];
+		},false);
+		canvas.addEventListener('mouseout',function(){game.mouse=[null,null]},false);
+		
 		//this.animFrame = window.requestAnimationFrame(game.tick);
 		//this.animator.add(this.loop
 	},
@@ -58,6 +67,8 @@ var game = {
 		c.fillText(this.runtime, 10, 20);
 		c.fillText(this.steps, 10, 40);
 		//console.log("foo");
+		
+		c.fillText(this.mouse[0] +", "+this.mouse[1], 10,60);
 	},
 	
 	start : function(){
