@@ -5,6 +5,8 @@
   window.requestAnimationFrame = requestAnimationFrame;
 })();
 */
+console.log("shims.js loaded");
+
 (function() {
     var lastTime = 0;
     var vendors = ['webkit', 'moz'];
