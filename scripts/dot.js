@@ -7,20 +7,20 @@ function Dot(x,y,vx,vy,ax,ay){
 	this.ay=ay;
 	this.size = 2;
 	this.color = 'black';
-
-	/*this.pos = {'x':x,'y':y,'vx':vx,'vy':vy,'ax':ax,'ay':ay};
-	this.size = 2;
-	this.color = 'black';*/
-	//this.lastpos = {'x':x, 'y':y};
 }
 
 Dot.prototype.tick = function(ms,game){
 	if(this.x < 0 || this.x > game.width) this.vx *= -1;
-	//this.vx *= this.ax;
+	if( game.gamemode.FRICTION | game.gamemode.current){
+		this.vx *= 0.9;
+		this.vy *= 0.9;
+	}
+	
+	this.vx += this.ax;
 	this.x += this.vx*ms;
 	
 	if(this.y < 0 || this.y > game.height) this.vy *= -1;
-	//this.vy *= this.ay;
+	this.vy += this.ay;
 	this.y += this.vy*ms;
 }
 /*Dot.prototype.tick = function(ms,game){
