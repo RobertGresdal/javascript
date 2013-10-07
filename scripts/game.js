@@ -34,7 +34,7 @@ var game = {
 	timer: 0,
 	runtime: 0,
 	debug:1,
-	stepAccuracy: 10,
+	stepAccuracy: 20,
 	/** ms accuracy of simulation steps performed, 10 means 100 calculations a second, 20 means 50. */
 	steps:0,
 	/** Holds the handle for the requestAnimationFrame clock */
@@ -51,13 +51,14 @@ var game = {
 	animStart:null,
 	/** Holds mouse position over the canvas */
 	mouse:[null,null],
-	root:{dots:[]},
+	root:{dots:[],lastdots:[]},
 	kdtree:null,
+	state:{running:0},
 	
 	init : function(){
 		game.width = document.body.clientWidth - 20;
 		game.height = document.body.clientHeight - 20;
-	
+		
 		var canvas = document.getElementById('game');
 		canvas.width = game.width;
 		canvas.height = game.height;
@@ -75,7 +76,7 @@ var game = {
 		for(var i=0;i<size;i++){
 			this.root.dots[i] = new Dot(
 				Math.random()*game.width, Math.random()*game.height,
-				Math.random(),Math.random(),
+				Math.random()/10-0.05,Math.random()/10-0.05,
 				Math.random(),Math.random()
 			);
 		};
@@ -93,16 +94,6 @@ var game = {
 				nearest[i][0].size = 4;
 				nearest[i][0].color = 'red';
 			}
-			
-			//console.log(nearest);
-			//console.log(nearest);
-			//nearest[0][0].size = 4;
-			//nearest[0][0].color = 'red';
-			/*for(var i=0,j=nearest.count;i<j;i++){
-				nearest[i][0].color = 'red';
-				nearest[i][0].size = 4;
-			}
-			console.log(nearest[0][0].size);*/
 		},false);
 		//console.log(this.root.dots);
 		//this.animFrame = window.requestAnimationFrame(game.tick);
@@ -116,9 +107,26 @@ var game = {
 	*/
 	tick : function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
+		var self=this;
+		var nearest = self.kdTree.nearest({'x':self.mouse[0],'y':self.mouse[1]}, 30);
+		
+		//var diff = nearest.diff(self.root.lastdots);
+		var diff = self.root.lastdots.diff(nearest);
+		for(var i=0,j=diff.length;i<j;i++){
+			var dot = diff[i][0];
+			dot.size = 2;
+			dot.color = 'black';
+		}
+		
+		for(var i=0,j=nearest.length;i<j;i++){
+			var dot = nearest[i][0];
+			dot.size = 4;
+			dot.color = 'red';
+		}
+		self.root.lastdots = nearest.splice(0);
 		
 		for(var i=0,d;d=this.root.dots[i];i++){
-			d.tick(t,game);
+			//d.tick(t,game);
 		}
 		
 		if(this.runtime > 50000){
@@ -158,27 +166,23 @@ var game = {
 	start : function(){
 		game.animStart = +new Date;
 		game.lastStepRTC = game.animStart;
+		game.state.running = 1;
 		game.animFrame = requestAnimationFrame(this.step);
 		//console.log(game.animStart);
 	},
 	pause : function(){
-		game.animFrame.cancelAnimationFrame();
+		game.state.running = 0;
+		cancelAnimationFrame(game.animFrame);
 	},
 	resume: function(){
-	
+		game.state.running = 1;
+		game.animFrame = requestAnimationFrame(this.step);
 	},
 	step : function(timestamp){
 		var now = +new Date;
 		var diff = (now - game.lastStepRTC);
 		
 		game.runtime += diff;
-		
-		if(game.debug){
-			console.log(game.timer, game.runtime, timestamp);
-			//console.log(timestamp);
-			console.log(Math.round(timestamp));
-			game.debug=0;
-		}
 		
 		game.render();
 		
