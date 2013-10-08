@@ -11,6 +11,8 @@ function Dot(x,y,vx,vy,ax,ay){
 
 Dot.prototype.tick = function(ms,game){
 	if(this.x < 0 || this.x > game.width) this.vx *= -1;
+	if(this.y < 0 || this.y > game.height) this.vy *= -1;
+	
 	if( game.gamemode.FRICTION & game.gamemode.current ){
 		this.vx *= 0.97;
 		this.vy *= 0.97;
@@ -19,7 +21,6 @@ Dot.prototype.tick = function(ms,game){
 	this.vx += this.ax*ms;
 	this.x += this.vx*ms;
 	
-	if(this.y < 0 || this.y > game.height) this.vy *= -1;
 	this.vy += this.ay*ms;
 	this.y += this.vy*ms;
 }

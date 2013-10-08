@@ -34,7 +34,7 @@ var game = {
 	timer: 0,
 	runtime: 0,
 	debug:1,
-	stepAccuracy: 20,
+	stepAccuracy: 10,
 	/** ms accuracy of simulation steps performed, 10 means 100 calculations a second, 20 means 50. */
 	steps:0,
 	/** Holds the handle for the requestAnimationFrame clock */
@@ -116,7 +116,7 @@ var game = {
 		// restore old dots
 		for(var i=0,j=diff.length;i<j;i++){
 			var dot = diff[i][0];
-			dot.size = 3;
+			//dot.size = 3;
 			dot.color = 'black';
 			dot.ax = 0;
 			dot.ay = 0;
@@ -125,8 +125,8 @@ var game = {
 		// color new dots
 		for(var i=0,j=nearest.length;i<j;i++){
 			var dot = nearest[i][0];
-			dot.size = 5;
-			//dot.color = 'red';
+			//dot.size = 5;
+			dot.color = 'green';
 			
 			// Move away
 			if(this.gamemode.current & this.gamemode.GRAVITY){
@@ -154,7 +154,7 @@ var game = {
 					var nd = m[0];
 					if( nd==d ) continue;
 					//timer.each(500,function(){console.log(nd)},this);
-					if(nd.distance(nd,d) < 50){
+					if(nd.distance(nd,d) < 200){
 						//console.log('COLLISION',d,nd);
 						nd.color='red';
 						nd.ax = (nd.x-d.x)/self.width;
