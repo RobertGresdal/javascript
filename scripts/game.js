@@ -51,14 +51,15 @@ var game = {
 	animStart:null,
 	/** Holds mouse position over the canvas */
 	mouse:null,
-	root:{dots:[],lastdots:[]},
+	mouseButton:null,
+	root:{dots:[],lastdots:[],dotslength:0},
 	kdtree:null,
 	state:{running:0},
-	gamemode:{current:21,GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,SELFGRAVITY:16},
+	gamemode:{current:(1+4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
 	
 	init : function(){
-		game.width = document.body.clientWidth - 20;
-		game.height = document.body.clientHeight - 20;
+		game.width = 800;//document.body.clientWidth - 20;
+		game.height = 800;//document.body.clientHeight - 20;
 		
 		var canvas = document.getElementById('game');
 		canvas.width = game.width;
@@ -66,13 +67,14 @@ var game = {
 		this.context = canvas.getContext('2d');
 		
 		canvas.addEventListener('mousemove',function(e){
-			game.mouse = {x:e.clientX, y:e.clientY};
+			//game.mouse = {x:e.clientX, y:e.clientY};
+			game.mouse = {x: e.pageX-this.offsetLeft, y:e.pageY-this.offsetTop};
 		},false);
 		canvas.addEventListener('mouseout',function(){game.mouse=null},false);
 		
 		
 		//this.root.dots = [new Dot(10,40),new Dot(80,150),new Dot(350,440)];
-		var size = 1500;
+		var size = 500;
 		this.root.dots = new Array(size);
 		for(var i=0;i<size;i++){
 			this.root.dots[i] = new Dot(
@@ -81,18 +83,30 @@ var game = {
 				0,0
 			);
 		};
+		this.root.dotslength = this.root.dots.length;
 		console.debug(this.root.dots[0],this.root.dots[size-1]);
 		
 		this.kdTree = new kdTree(this.root.dots, this.distance, ['x','y']);
 		
 		var self = this;
-		canvas.addEventListener('click',function(e){
+		/*canvas.addEventListener('click',function(e){
+			this.mouse.button1 = e.
 			var nearest = self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y},5);
 			for(var i=0,j=nearest.length;i<j;i++){
 				nearest[i][0].size = 4;
 				nearest[i][0].color = 'red';
 			}
-		},false);
+			timer.each(50,function(e){
+				this.root.dots.push(new Dot(e.clientX, e.clientY, 0,0,0,0));
+			},this);
+		},false);*/
+		self.mouseButton=[0, 0, 0, 0, 0, 0, 0, 0, 0];
+		document.body.onmousedown = function(evt) { 
+		  ++self.mouseButton[evt.button];
+		}
+		document.body.onmouseup = function(evt) {
+		  --self.mouseButton[evt.button];
+		}
 		//console.log(this.root.dots);
 		//this.animFrame = window.requestAnimationFrame(game.tick);
 		//this.animator.add(this.loop
@@ -145,10 +159,20 @@ var game = {
 		self.root.lastdots = nearest.splice(0);
 		
 		
+		// IF MOUSE BUTTON PRESSED, CREATE PARTICLES
+		timer.each(50,function(){
+			if( this.mouse && this.mouseButton[0]>0 ){
+				var dot = new Dot(this.mouse.x, this.mouse.y, Math.random()-0.5,Math.random()-0.5, 0,0);
+				//console.log(dot);
+				this.root.dots.push(dot);
+				this.root.dotslength = this.root.dots.length;
+			};
+		},self);
+		
 		for(var i=0,d=null;d=this.root.dots[i];i++){
 			// DOT GRAVITY
 			var colliders = [];
-			if(this.gamemode.current & this.gamemode.SELFGRAVITY) {
+			if(this.gamemode.current & this.gamemode.ALLDOTS) {
 				var neardot = self.kdTree.nearest({'x':d.x,'y':d.y}, 2);
 				for(var k=0,m=null;m=neardot[k];k++){
 					var nd = m[0];
@@ -156,13 +180,23 @@ var game = {
 					//timer.each(500,function(){console.log(nd)},this);
 					if(nd.distance(nd,d) < 200){
 						//console.log('COLLISION',d,nd);
-						nd.color='red';
-						nd.ax = (nd.x-d.x)/self.width;
-						nd.ay = (nd.y-d.y)/self.height;
 						
-						d.color = 'red';
-						d.ax = -nd.ax;
-						d.ay = -nd.ay;
+						if(this.gamemode.current & this.gamemode.SELFEXPLOSIVE) {
+							nd.ax = (nd.x-d.x)/self.width;
+							nd.ay = (nd.y-d.y)/self.height;
+							nd.color='red';
+							d.color = 'purple';
+							d.ax = -nd.ax;
+							d.ay = -nd.ay;
+						} else if(this.gamemode.current & this.gamemode.SELFGRAVITY){
+							nd.ax = (d.x-nd.x)/self.width;
+							nd.ay = (d.y-nd.y)/self.height;
+							nd.color='red';
+							d.color = 'purple';
+							d.ax = -nd.ax;
+							d.ay = -nd.ay;
+						}
+						
 						
 						if(colliders.indexOf(nd)<0)colliders.push(nd);
 					}
@@ -223,9 +257,9 @@ var game = {
 		c.stroke();*/
 		
 		c.fillStyle = 'black';
-		c.font = '12pt DejaVu Sans';
+		c.font = '9pt DejaVu Sans';
 		c.fillText(this.runtime, 10, 20);
-		//c.fillText(this.steps, 10, 40);
+		c.fillText('Particles: '+this.root.dotslength, 10, 40);
 		
 		if(this.mouse)
 		c.fillText(this.mouse.x +", "+this.mouse.y, 10,40);

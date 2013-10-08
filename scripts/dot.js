@@ -14,8 +14,8 @@ Dot.prototype.tick = function(ms,game){
 	if(this.y < 0 || this.y > game.height) this.vy *= -1;
 	
 	if( game.gamemode.FRICTION & game.gamemode.current ){
-		this.vx *= 0.97;
-		this.vy *= 0.97;
+		this.vx *= 0.98;
+		this.vy *= 0.98;
 	}
 	
 	this.vx += this.ax*ms;
