@@ -5,24 +5,39 @@ function Dot(x,y,vx,vy,ax,ay){
 	this.vy=vy;
 	this.ax=ax;
 	this.ay=ay;
-	this.size = 2;
+	this.size = 3;
 	this.color = 'black';
 }
 
 Dot.prototype.tick = function(ms,game){
 	if(this.x < 0 || this.x > game.width) this.vx *= -1;
-	if( game.gamemode.FRICTION | game.gamemode.current){
-		this.vx *= 0.9;
-		this.vy *= 0.9;
+	if( game.gamemode.FRICTION & game.gamemode.current ){
+		this.vx *= 0.97;
+		this.vy *= 0.97;
 	}
 	
-	this.vx += this.ax;
+	this.vx += this.ax*ms;
 	this.x += this.vx*ms;
 	
 	if(this.y < 0 || this.y > game.height) this.vy *= -1;
-	this.vy += this.ay;
+	this.vy += this.ay*ms;
 	this.y += this.vy*ms;
 }
+
+Dot.prototype.distance = function(a, b) {
+	return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
+}
+/*
+Dot.prototype.direction = function(a, b) {
+	var total = {
+		x:(Math.abs(a.x)+Math.abs(b.x)),
+		y:(Math.abs(a.y)+Math.abs(b.y))}
+	;
+	var distance = {
+		x:(a.x/total.x),
+		y:(
+}
+*/
 /*Dot.prototype.tick = function(ms,game){
 	var t = ms/1000;
 	var dots = game.root.dots;
@@ -63,6 +78,3 @@ Dot.prototype.tick = function(ms,game){
 }*/
 
 
-Dot.prototype.distance = function(a, b) {
-	return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
-};

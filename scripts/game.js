@@ -50,11 +50,11 @@ var game = {
 	/** Timestamp from when start were called */
 	animStart:null,
 	/** Holds mouse position over the canvas */
-	mouse:[null,null],
+	mouse:null,
 	root:{dots:[],lastdots:[]},
 	kdtree:null,
 	state:{running:0},
-	gamemode:{current:2,GRAVITY:0,EXPLOSIVE:1,FRICTION:2},
+	gamemode:{current:21,GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,SELFGRAVITY:16},
 	
 	init : function(){
 		game.width = document.body.clientWidth - 20;
@@ -66,9 +66,9 @@ var game = {
 		this.context = canvas.getContext('2d');
 		
 		canvas.addEventListener('mousemove',function(e){
-			game.mouse = [e.clientX, e.clientY];
+			game.mouse = {x:e.clientX, y:e.clientY};
 		},false);
-		canvas.addEventListener('mouseout',function(){game.mouse=[null,null]},false);
+		canvas.addEventListener('mouseout',function(){game.mouse=null},false);
 		
 		
 		//this.root.dots = [new Dot(10,40),new Dot(80,150),new Dot(350,440)];
@@ -87,7 +87,7 @@ var game = {
 		
 		var self = this;
 		canvas.addEventListener('click',function(e){
-			var nearest = self.kdTree.nearest({'x':self.mouse[0],'y':self.mouse[1]},5);
+			var nearest = self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y},5);
 			for(var i=0,j=nearest.length;i<j;i++){
 				nearest[i][0].size = 4;
 				nearest[i][0].color = 'red';
@@ -110,13 +110,13 @@ var game = {
 			this.kdTree = new kdTree(this.root.dots, this.distance, ['x','y']);
 		},this);
 		
-		var nearest = self.mouse[0]===null ? [] : self.kdTree.nearest({'x':self.mouse[0],'y':self.mouse[1]}, 50);
+		var nearest = self.mouse===null ? [] : self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, 50);
 		var diff = self.root.lastdots.diff(nearest);
 
 		// restore old dots
 		for(var i=0,j=diff.length;i<j;i++){
 			var dot = diff[i][0];
-			dot.size = 2;
+			dot.size = 3;
 			dot.color = 'black';
 			dot.ax = 0;
 			dot.ay = 0;
@@ -125,22 +125,81 @@ var game = {
 		// color new dots
 		for(var i=0,j=nearest.length;i<j;i++){
 			var dot = nearest[i][0];
-			dot.size = 4;
-			dot.color = 'red';
+			dot.size = 5;
+			//dot.color = 'red';
 			
 			// Move away
-			if(this.gamemode.GRAVITY | this.gamemode.current){
-				dot.ax = (self.mouse[0]-dot.x)/self.width;
-				dot.ay = (self.mouse[1]-dot.y)/self.width;
-			} else {
-				dot.ax = (dot.x-self.mouse[0])/self.width;
-				dot.ay = (dot.y-self.mouse[1])/self.width;
+			if(this.gamemode.current & this.gamemode.GRAVITY){
+				if(dot.distance(dot,self.mouse) < 100*100){
+					dot.ax = (self.mouse.x-dot.x)/self.width;
+					dot.ay = (self.mouse.y-dot.y)/self.height;
+				}
+			} 
+			else if(this.gamemode.current & this.gamemode.EXPLOSIVE) {
+				if(dot.distance(dot,self.mouse) < 50*50){
+					dot.ax = (dot.x-self.mouse.x)/self.width;
+					dot.ay = (dot.y-self.mouse.y)/self.height;
+				}
 			}
 		}
 		self.root.lastdots = nearest.splice(0);
 		
-		for(var i=0,d;d=this.root.dots[i];i++){
+		
+		for(var i=0,d=null;d=this.root.dots[i];i++){
+			// DOT GRAVITY
+			var colliders = [];
+			if(this.gamemode.current & this.gamemode.SELFGRAVITY) {
+				var neardot = self.kdTree.nearest({'x':d.x,'y':d.y}, 2);
+				for(var k=0,m=null;m=neardot[k];k++){
+					var nd = m[0];
+					if( nd==d ) continue;
+					//timer.each(500,function(){console.log(nd)},this);
+					if(nd.distance(nd,d) < 50){
+						//console.log('COLLISION',d,nd);
+						nd.color='red';
+						nd.ax = (nd.x-d.x)/self.width;
+						nd.ay = (nd.y-d.y)/self.height;
+						
+						d.color = 'red';
+						d.ax = -nd.ax;
+						d.ay = -nd.ay;
+						
+						if(colliders.indexOf(nd)<0)colliders.push(nd);
+					}
+				}
+			}
+			
+			// MERGE
+			/*if(this.gamemode.current & this.gamemode.MERGE){
+				var neardot = self.kdTree.nearest({'x':d.x,'y':d.y}, 3);
+				for(var ii=1,jj=neardot.length;ii<jj;ii++){
+					var distance = d.distance(d,neardot[ii][0]);
+					if( distance != 0 && distance < d.size*d.size ){
+						//console.debug(d.distance(d,neardot[ii][0]), d, neardot[ii][0]);
+						var index = this.root.dots.indexOf(neardot[ii][0]);
+						
+						// remove colliding dot
+						this.root.dots.splice(index,1);
+						//this.kdTree.remove(neardot[ii][0]);
+						
+						d.size += 1;
+						d.color = 'purple';
+					}
+				}
+			}*/
+			// END MERGE
+			
 			d.tick(t,game);
+			
+			d.ax = 0;
+			d.ay = 0;
+			d.color = 'black';
+			/*for(var i=0,j=colliders.length;i<j;i++){
+				var nd = colliders[i];
+				nd.color='green';
+				nd.ax=0;
+				nd.ay=0;
+			}*/
 		}
 		
 		if(this.runtime > 50000){
@@ -168,13 +227,14 @@ var game = {
 		c.fillText(this.runtime, 10, 20);
 		//c.fillText(this.steps, 10, 40);
 		
-		c.fillText(this.mouse[0] +", "+this.mouse[1], 10,40);
+		if(this.mouse)
+		c.fillText(this.mouse.x +", "+this.mouse.y, 10,40);
 		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
 		
 		for(var i=0,d;d=this.root.dots[i];i++){
 			c.fillStyle = d.color;
-			c.fillRect(d.x,d.y, d.size,d.size);
+			c.fillRect(d.x-d.size/2, d.y-d.size/2, d.size,d.size);
 		}
 	},
 	

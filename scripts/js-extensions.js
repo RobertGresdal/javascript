@@ -11,3 +11,8 @@ String.prototype.hashCode = function(){
 Array.prototype.diff = function(a) {
     return this.filter(function(i) {return !(a.indexOf(i) > -1);});
 };
+Array.prototype.unique = function() {
+	return this.filter( function(value, index, self) { 
+		return self.indexOf(value) === index;
+	} );
+};
