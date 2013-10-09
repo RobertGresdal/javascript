@@ -7,6 +7,7 @@ function Dot(x,y,vx,vy,ax,ay){
 	this.ay=ay;
 	this.size = 3;
 	this.color = 'black';
+	this.speed=Math.sqrt(x*x+y*y);
 }
 Dot.prototype.toMessage = function(){
 	return {
@@ -16,27 +17,34 @@ Dot.prototype.toMessage = function(){
 	};
 };
 Dot.prototype.tick = function(ms,game){
+	var friction = game.gamemode.FRICTION & game.gamemode.current;
+	var wallHit = false;
+	
 	// PREVENT WALL BLEED
 	if(this.x < 10){
 		this.x = Math.max(this.x,10);
 		this.ax = this.x/game.width;
+		wallHit=true;
 	}else if(this.x > game.width-10){
 		this.x = Math.min(this.x,game.width-10);
 		this.ax = -1*Math.abs((this.x-game.width)/game.width);
+		wallHit=true;
 	};
 	if(this.y < 10){
 		this.y = Math.max(this.y,10);
 		this.ay = this.y/game.height;
+		wallHit=true;
 	} else if(this.y > game.height-10){
 		//this.vy *= -1;
 		this.y = Math.min(this.y,game.height-10);
 		this.ay = -1*Math.abs((this.y-game.height)/game.height);
+		wallHit=true;
 	};
 	// END WALL BLEED
 	
-	if( game.gamemode.FRICTION & game.gamemode.current ){
-		this.vx *= 0.98;
-		this.vy *= 0.98;
+	if( friction && wallHit){
+		this.vx *= 0.95;
+		this.vy *= 0.95;
 	};
 	
 	this.vx += this.ax*ms;
@@ -44,6 +52,9 @@ Dot.prototype.tick = function(ms,game){
 	
 	this.vy += this.ay*ms;
 	this.y += this.vy*ms;
+	
+	this.speed=Math.sqrt(this.x*this.x+this.y*this.y);
+	game.temperature += this.speed*this.size;
 }
 
 Dot.prototype.distance = function(a, b) {

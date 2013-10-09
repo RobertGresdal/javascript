@@ -56,7 +56,8 @@ var game = {
 	root:{dots:[],lastdots:[],dotslength:0},
 	kdtree:null,
 	state:{running:0},
-	gamemode:{current:(1+4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
+	gamemode:{current:(4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
+	temperature:0,
 	
 	init : function(){
 		var canvas = document.getElementById('game');
@@ -128,13 +129,10 @@ var game = {
 	tick : function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
 		var self=this;
-		// If we have less than 200 particles, update the tree each tick, else do it every 100ms
-		// There was a bug where the tree wasn't updated to the real amount of dots when enoug had
-		// merged so there were less dots than the tree thought. It didn't happen when there were
-		// more dots in existence than asked for in nearest()
-		/*if(self.root.dotslength <= 200){
-			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
-		} else */timer.each(100,function(){
+		this.temperature=0;
+		
+		// Update the k-d Tree
+		timer.each(100,function(){
 			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 		},this);
 		
@@ -204,7 +202,7 @@ var game = {
 						var ix = this.root.dots.indexOf(nd);
 						this.root.dots.splice(ix,1); // nd is never d, so parent loop should not fail
 						this.root.dotslength = this.root.dots.length;
-						d.size += 1;
+						d.size += nd.size;
 					} else if(distance < 200){
 						//console.log('COLLISION',d,nd);
 						
@@ -266,15 +264,18 @@ var game = {
 		c.font = '9pt DejaVu Sans';
 		c.fillText(this.runtime, 10, 20);
 		c.fillText('Particles: '+this.root.dotslength, 10, 40);
-		
-		if(this.mouse)
-		c.fillText(this.mouse.x +", "+this.mouse.y, 10,40);
+		c.fillText('Temperature: '+Math.round(this.temperature/100), 10, 60);
+		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
 		
 		for(var i=0,d;d=this.root.dots[i];i++){
 			c.fillStyle = d.color;
-			c.fillRect(d.x-d.size/2, d.y-d.size/2, d.size,d.size);
+			var size = Math.sqrt(d.size)*2;
+			c.fillRect(d.x-size/2, d.y-size/2, size,size);
+			/*c.beginPath();
+			c.arc(d.x, d.y, 3, 0,2*Math.Pi, false);
+			c.fill();*/
 		}
 	},
 	
