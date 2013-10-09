@@ -264,7 +264,7 @@ var game = {
 		c.font = '9pt DejaVu Sans';
 		c.fillText(this.runtime, 10, 20);
 		c.fillText('Particles: '+this.root.dotslength, 10, 40);
-		c.fillText('Temperature: '+Math.round(this.temperature/100), 10, 60);
+		c.fillText('Temperature: '+Math.round(this.temperature/this.root.dotslength), 10, 60);
 		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
