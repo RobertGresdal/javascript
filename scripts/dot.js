@@ -8,7 +8,13 @@ function Dot(x,y,vx,vy,ax,ay){
 	this.size = 3;
 	this.color = 'black';
 }
-
+Dot.prototype.toMessage = function(){
+	return {
+		x:this.x, y:this.y, 
+		vx:this.vx, vy:this.vy,
+		ax:this.ax, ay:this.ay
+	};
+};
 Dot.prototype.tick = function(ms,game){
 	// PREVENT WALL BLEED
 	if(this.x < 10){

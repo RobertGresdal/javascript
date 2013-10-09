@@ -59,10 +59,18 @@ var game = {
 	gamemode:{current:(1+4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
 	
 	init : function(){
-		game.width = 800;//document.body.clientWidth - 20;
-		game.height = 800;//document.body.clientHeight - 20;
-		
 		var canvas = document.getElementById('game');
+		
+		// WINDOW SIZE AND RESIZE
+		game.width = document.body.clientWidth - 40;
+		game.height = document.body.clientHeight - 80;
+		window.addEventListener('resize',function(e){
+			game.width = document.body.clientWidth - 40;
+			game.height = document.body.clientHeight - 80;
+			canvas.width = game.width;
+			canvas.height = game.height;
+		},false);
+		
 		canvas.width = game.width;
 		canvas.height = game.height;
 		this.context = canvas.getContext('2d');
@@ -72,7 +80,6 @@ var game = {
 			game.mouse = {x: e.pageX-this.offsetLeft, y:e.pageY-this.offsetTop};
 		},false);
 		canvas.addEventListener('mouseout',function(){game.mouse=null},false);
-		
 		
 		//this.root.dots = [new Dot(10,40),new Dot(80,150),new Dot(350,440)];
 		var size = 500;
@@ -87,7 +94,7 @@ var game = {
 		this.root.dotslength = this.root.dots.length;
 		console.debug(this.root.dots[0],this.root.dots[size-1]);
 		
-		this.kdTree = new kdTree(this.root.dots, this.distance, ['x','y']);
+		this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 		
 		var self = this;
 		/*canvas.addEventListener('click',function(e){
@@ -121,11 +128,28 @@ var game = {
 	tick : function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
 		var self=this;
-		timer.each(100,function(){
-			this.kdTree = new kdTree(this.root.dots, this.distance, ['x','y']);
+		// If we have less than 200 particles, update the tree each tick, else do it every 100ms
+		// There was a bug where the tree wasn't updated to the real amount of dots when enoug had
+		// merged so there were less dots than the tree thought. It didn't happen when there were
+		// more dots in existence than asked for in nearest()
+		/*if(self.root.dotslength <= 200){
+			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
+		} else */timer.each(100,function(){
+			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 		},this);
 		
-		var nearest = self.mouse===null ? [] : self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, 100);
+		// IF MOUSE BUTTON PRESSED, CREATE PARTICLES
+		timer.each(50,function(){
+			if( this.mouse && this.mouseButton[0]>0 ){
+				var dot = new Dot(this.mouse.x, this.mouse.y, Math.random()-0.5,Math.random()-0.5, 0,0);
+				//console.log(dot);
+				this.root.dots.push(dot);
+				this.root.dotslength = this.root.dots.length;
+			};
+		},self);
+		
+		var nearest = self.mouse==null ? [] : 
+			self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, Math.min(self.root.dotslength-5,100));
 		var diff = self.root.lastdots.diff(nearest);
 
 		// restore old dots
@@ -165,15 +189,6 @@ var game = {
 		self.root.lastdots = nearest.splice(0);
 		
 		
-		// IF MOUSE BUTTON PRESSED, CREATE PARTICLES
-		timer.each(50,function(){
-			if( this.mouse && this.mouseButton[0]>0 ){
-				var dot = new Dot(this.mouse.x, this.mouse.y, Math.random()-0.5,Math.random()-0.5, 0,0);
-				//console.log(dot);
-				this.root.dots.push(dot);
-				this.root.dotslength = this.root.dots.length;
-			};
-		},self);
 		
 		for(var i=0,d=null;d=this.root.dots[i];i++){
 			// DOT GRAVITY
@@ -185,7 +200,7 @@ var game = {
 					if( nd==d ) continue;
 					//timer.each(500,function(){console.log(nd)},this);
 					var distance = nd.distance(nd,d);
-					if(distance < 4 && this.gamemode.current & this.gamemode.ALLDOTS){
+					if(distance < 1 && this.gamemode.current & this.gamemode.ALLDOTS){
 						var ix = this.root.dots.indexOf(nd);
 						this.root.dots.splice(ix,1); // nd is never d, so parent loop should not fail
 						this.root.dotslength = this.root.dots.length;
@@ -213,26 +228,6 @@ var game = {
 					}
 				}
 			}
-			
-			// MERGE
-			/*if(this.gamemode.current & this.gamemode.MERGE){
-				var neardot = self.kdTree.nearest({'x':d.x,'y':d.y}, 3);
-				for(var ii=1,jj=neardot.length;ii<jj;ii++){
-					var distance = d.distance(d,neardot[ii][0]);
-					if( distance != 0 && distance < d.size*d.size ){
-						//console.debug(d.distance(d,neardot[ii][0]), d, neardot[ii][0]);
-						var index = this.root.dots.indexOf(neardot[ii][0]);
-						
-						// remove colliding dot
-						this.root.dots.splice(index,1);
-						//this.kdTree.remove(neardot[ii][0]);
-						
-						d.size += 1;
-						d.color = 'purple';
-					}
-				}
-			}*/
-			// END MERGE
 			
 			d.tick(t,game);
 			
