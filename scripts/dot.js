@@ -10,13 +10,28 @@ function Dot(x,y,vx,vy,ax,ay){
 }
 
 Dot.prototype.tick = function(ms,game){
-	if(this.x < 0 || this.x > game.width) this.vx *= -1;
-	if(this.y < 0 || this.y > game.height) this.vy *= -1;
+	// PREVENT WALL BLEED
+	if(this.x < 10){
+		this.x = Math.max(this.x,10);
+		this.ax = this.x/game.width;
+	}else if(this.x > game.width-10){
+		this.x = Math.min(this.x,game.width-10);
+		this.ax = -1*Math.abs((this.x-game.width)/game.width);
+	};
+	if(this.y < 10){
+		this.y = Math.max(this.y,10);
+		this.ay = this.y/game.height;
+	} else if(this.y > game.height-10){
+		//this.vy *= -1;
+		this.y = Math.min(this.y,game.height-10);
+		this.ay = -1*Math.abs((this.y-game.height)/game.height);
+	};
+	// END WALL BLEED
 	
 	if( game.gamemode.FRICTION & game.gamemode.current ){
 		this.vx *= 0.98;
 		this.vy *= 0.98;
-	}
+	};
 	
 	this.vx += this.ax*ms;
 	this.x += this.vx*ms;

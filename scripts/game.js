@@ -34,8 +34,9 @@ var game = {
 	timer: 0,
 	runtime: 0,
 	debug:1,
-	stepAccuracy: 10,
 	/** ms accuracy of simulation steps performed, 10 means 100 calculations a second, 20 means 50. */
+	stepAccuracy: 10,
+	/** counter of steps performed during a tick */
 	steps:0,
 	/** Holds the handle for the requestAnimationFrame clock */
 	animFrame: null,
@@ -124,7 +125,7 @@ var game = {
 			this.kdTree = new kdTree(this.root.dots, this.distance, ['x','y']);
 		},this);
 		
-		var nearest = self.mouse===null ? [] : self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, 50);
+		var nearest = self.mouse===null ? [] : self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, 100);
 		var diff = self.root.lastdots.diff(nearest);
 
 		// restore old dots
@@ -144,15 +145,20 @@ var game = {
 			
 			// Move away
 			if(this.gamemode.current & this.gamemode.GRAVITY){
+				var GRAVITY_MODIFIER = 0.05;
 				if(dot.distance(dot,self.mouse) < 100*100){
-					dot.ax = (self.mouse.x-dot.x)/self.width;
-					dot.ay = (self.mouse.y-dot.y)/self.height;
+					dot.ax = (self.mouse.x-dot.x)/self.width*GRAVITY_MODIFIER;
+					dot.ay = (self.mouse.y-dot.y)/self.height*GRAVITY_MODIFIER;
 				}
 			} 
 			else if(this.gamemode.current & this.gamemode.EXPLOSIVE) {
 				if(dot.distance(dot,self.mouse) < 50*50){
-					dot.ax = (dot.x-self.mouse.x)/self.width;
-					dot.ay = (dot.y-self.mouse.y)/self.height;
+					//dot.ax = (dot.x-self.mouse.x)/self.width;
+					//dot.ay = (dot.y-self.mouse.y)/self.height;
+					var dx = dot.x-self.mouse.x;
+					var dy = dot.y-self.mouse.y;
+					dot.ax = 1/Math.min(dx*dx*dx,100);
+					dot.ay = 1/Math.min(dy*dy*dy,100);
 				}
 			}
 		}
@@ -178,7 +184,13 @@ var game = {
 					var nd = m[0];
 					if( nd==d ) continue;
 					//timer.each(500,function(){console.log(nd)},this);
-					if(nd.distance(nd,d) < 200){
+					var distance = nd.distance(nd,d);
+					if(distance < 4 && this.gamemode.current & this.gamemode.ALLDOTS){
+						var ix = this.root.dots.indexOf(nd);
+						this.root.dots.splice(ix,1); // nd is never d, so parent loop should not fail
+						this.root.dotslength = this.root.dots.length;
+						d.size += 1;
+					} else if(distance < 200){
 						//console.log('COLLISION',d,nd);
 						
 						if(this.gamemode.current & this.gamemode.SELFEXPLOSIVE) {
@@ -196,7 +208,6 @@ var game = {
 							d.ax = -nd.ax;
 							d.ay = -nd.ay;
 						}
-						
 						
 						if(colliders.indexOf(nd)<0)colliders.push(nd);
 					}
