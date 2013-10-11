@@ -56,8 +56,8 @@ var game = {
 	root:{dots:[],lastdots:[],dotslength:0},
 	kdtree:null,
 	state:{running:0},
-	gamemode:{current:(4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
-	temperature:0,
+	gamemode:{current:(1+4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
+	energy:0,
 	
 	init : function(){
 		var canvas = document.getElementById('game');
@@ -129,7 +129,7 @@ var game = {
 	tick : function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
 		var self=this;
-		this.temperature=0;
+		this.energy=0;
 		
 		// Update the k-d Tree
 		timer.each(100,function(){
@@ -264,7 +264,8 @@ var game = {
 		c.font = '9pt DejaVu Sans';
 		c.fillText(this.runtime, 10, 20);
 		c.fillText('Particles: '+this.root.dotslength, 10, 40);
-		c.fillText('Temperature: '+Math.round(this.temperature/this.root.dotslength), 10, 60);
+		
+		c.fillText('energy: '+this.energy.toLocaleString(), 10, 60);
 		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);

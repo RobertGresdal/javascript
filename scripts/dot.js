@@ -7,7 +7,9 @@ function Dot(x,y,vx,vy,ax,ay){
 	this.ay=ay;
 	this.size = 3;
 	this.color = 'black';
-	this.speed=Math.sqrt(x*x+y*y);
+	this.speed_2=(x*x+y*y);
+	this.max = {mx:this.size*vx*vx, my:this.size*vy*vy};
+	this.wallHit = false;
 }
 Dot.prototype.toMessage = function(){
 	return {
@@ -19,33 +21,47 @@ Dot.prototype.toMessage = function(){
 Dot.prototype.tick = function(ms,game){
 	var friction = game.gamemode.FRICTION & game.gamemode.current;
 	var wallHit = false;
+	var direction = {x:0,y:0};
 	
 	// PREVENT WALL BLEED
 	if(this.x < 10){
+		direction.x = 1;
 		this.x = Math.max(this.x,10);
 		this.ax = this.x/game.width;
 		wallHit=true;
 	}else if(this.x > game.width-10){
+		direction.x = -1;
 		this.x = Math.min(this.x,game.width-10);
-		this.ax = -1*Math.abs((this.x-game.width)/game.width);
+		this.ax = Math.abs((this.x-game.width)/game.width);
 		wallHit=true;
 	};
 	if(this.y < 10){
+		direction.y = 1;
 		this.y = Math.max(this.y,10);
 		this.ay = this.y/game.height;
 		wallHit=true;
 	} else if(this.y > game.height-10){
+		direction.y = -1;
 		//this.vy *= -1;
 		this.y = Math.min(this.y,game.height-10);
-		this.ay = -1*Math.abs((this.y-game.height)/game.height);
+		this.ay = Math.abs((this.y-game.height)/game.height);
 		wallHit=true;
 	};
 	// END WALL BLEED
 	
+	//this.ax *= direction;
+	//this.ay *= direction;
+	
 	if( friction && wallHit){
+		if(this.wallHit != wallHit){
+			this.max.mx = (this.size*this.vx*this.vx);
+			this.max.my = (this.size*this.vy*this.vy);
+		}
+		this.ax *= direction.x;
+		this.ay *= direction.y;
 		this.vx *= 0.95;
 		this.vy *= 0.95;
-	};
+	}
 	
 	this.vx += this.ax*ms;
 	this.x += this.vx*ms;
@@ -53,8 +69,9 @@ Dot.prototype.tick = function(ms,game){
 	this.vy += this.ay*ms;
 	this.y += this.vy*ms;
 	
-	this.speed=Math.sqrt(this.x*this.x+this.y*this.y);
-	game.temperature += this.speed*this.size;
+	this.speed_2=(this.x*this.x+this.y*this.y);
+	game.energy += (0.5 * this.size * this.speed_2)/1000000;
+	this.wallHit = wallHit;
 }
 
 Dot.prototype.distance = function(a, b) {
