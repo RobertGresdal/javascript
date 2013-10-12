@@ -61,7 +61,7 @@ var game = {
 	quadTree:null,
 	state:{running:0},
 	gamemode:{current:(1+4+16+64+128),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64,QUADTREE:128},
-	settings:{DRAWNODES:true,PARTICLES:500},
+	settings:{DRAWNODES:true,PARTICLES:800},
 	energy:0,
 	
 	init : function(){
@@ -77,6 +77,12 @@ var game = {
 			game.height = document.body.clientHeight - 80;
 			canvas.width = game.width;
 			canvas.height = game.height;
+			
+			var bounds = {x:0,y:0,width:game.width,height:game.height};
+			var pointQuad = true;
+			var maxDepth = 10;
+			var maxChildren = 4;
+			game.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
 		},false);
 		
 		canvas.width = game.width;
@@ -105,8 +111,8 @@ var game = {
 		//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 		var bounds = {x:0,y:0,width:game.width,height:game.height};
 		var pointQuad = true;
-		var maxDepth = 8;
-		var maxChildren = 8;
+		var maxDepth = 10;
+		var maxChildren = 4;
 		this.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
 		this.quadTree.insert(this.root.dots);
 		
@@ -144,10 +150,17 @@ var game = {
 		this.energy=0;
 		
 		// Update the k-d Tree
-		timer.each(100,function(){
-			//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
-		},this);
+		/*timer.each(100,function(){
+			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
+		},this);*/
+		
 		this.quadTree.clear();
+		// FIXME: this is probably overkill, but need new bounds when resize so do that only then?
+		/*var bounds = {x:0,y:0,width:game.width,height:game.height};
+		var pointQuad = true;
+		var maxDepth = 8;
+		var maxChildren = 8;
+		this.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);*/
 		this.quadTree.insert(this.root.dots);
 		
 		// IF MOUSE BUTTON PRESSED, CREATE PARTICLES
@@ -228,7 +241,8 @@ var game = {
 					
 					var distance = nd.distance(nd,d);
 					
-					if(distance < 1 && this.gamemode.current & this.gamemode.ALLDOTS){
+					// MERGING
+					if(distance < 1 && this.gamemode.current & this.gamemode.MERGE){
 						var ix = this.root.dots.indexOf(nd);
 						this.root.dots.splice(ix,1); // nd is never d, so parent loop should not fail
 						this.root.dotslength = this.root.dots.length;
@@ -338,8 +352,8 @@ var game = {
 		c.fillText(this.runtime, 10, 40);
 		c.fillText('Particles: '+this.root.dotslength, 10, 60);
 		
-		c.fillText('energy: '+this.energy.toLocaleString(), 10, 80);
-		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,100);
+		//c.fillText('energy: '+this.energy.toLocaleString(), 10, 80);
+		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
 		for(var i=0,d;d=this.root.dots[i];i++){
@@ -348,12 +362,12 @@ var game = {
 			var size = Math.sqrt(d.size);
 			
 			// Draw a filled circle to represent each particle
-			/*c.beginPath();
+			c.beginPath();
 			c.arc(d.x, d.y, size, 0,Math.PI*2, false);
 			c.closePath();
-			c.fill();*/
+			c.fill();
 			// Draw rectangle
-			c.fillRect(d.x-size/2, d.y-size/2, size, size);
+			//c.fillRect(d.x-size/2, d.y-size/2, size, size);
 		}
 	},
 	
