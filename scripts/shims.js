@@ -1,11 +1,4 @@
-/*(function() {
-  var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-                              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame ||
-							  window.oRequestAnimationFrame;
-  window.requestAnimationFrame = requestAnimationFrame;
-})();
-*/
-console.log("shims.js loaded");
+//console.log("shims.js loaded");
 
 (function() {
     var lastTime = 0;

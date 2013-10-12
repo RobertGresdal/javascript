@@ -42,6 +42,9 @@ var game = {
 	animFrame: null,
 	/** Holds the timestamp from when the last step was finished */
 	lastStepRTC:null,
+	/** Counts the ms between the last 5 frames */
+	fpsCounter:[0,0,0,0,0],
+	fpsIndex:-1,
 	/** Count upwards towards the rtc for the step counter, so we know when to run a simulation step */
 	stepCatchupRTC:null,
 	/** Clock for comparing rendering timings with the rtc */
@@ -55,12 +58,16 @@ var game = {
 	mouseButton:null,
 	root:{dots:[],lastdots:[],dotslength:0},
 	kdtree:null,
+	quadTree:null,
 	state:{running:0},
-	gamemode:{current:(1+4+16+64),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64},
+	gamemode:{current:(1+4+16+64+128),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64,QUADTREE:128},
+	settings:{DRAWNODES:true,PARTICLES:500},
 	energy:0,
 	
 	init : function(){
+		var self = this;
 		var canvas = document.getElementById('game');
+		//game.fpsCounter = new Array(100);
 		
 		// WINDOW SIZE AND RESIZE
 		game.width = document.body.clientWidth - 40;
@@ -83,7 +90,7 @@ var game = {
 		canvas.addEventListener('mouseout',function(){game.mouse=null},false);
 		
 		//this.root.dots = [new Dot(10,40),new Dot(80,150),new Dot(350,440)];
-		var size = 500;
+		var size = this.settings.PARTICLES;
 		this.root.dots = new Array(size);
 		for(var i=0;i<size;i++){
 			this.root.dots[i] = new Dot(
@@ -93,11 +100,16 @@ var game = {
 			);
 		};
 		this.root.dotslength = this.root.dots.length;
-		console.debug(this.root.dots[0],this.root.dots[size-1]);
+		//console.debug(this.root.dots[0],this.root.dots[size-1]);
 		
-		this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
+		//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
+		var bounds = {x:0,y:0,width:game.width,height:game.height};
+		var pointQuad = true;
+		var maxDepth = 8;
+		var maxChildren = 8;
+		this.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
+		this.quadTree.insert(this.root.dots);
 		
-		var self = this;
 		/*canvas.addEventListener('click',function(e){
 			this.mouse.button1 = e.
 			var nearest = self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y},5);
@@ -133,8 +145,10 @@ var game = {
 		
 		// Update the k-d Tree
 		timer.each(100,function(){
-			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
+			//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 		},this);
+		this.quadTree.clear();
+		this.quadTree.insert(this.root.dots);
 		
 		// IF MOUSE BUTTON PRESSED, CREATE PARTICLES
 		timer.each(50,function(){
@@ -146,6 +160,8 @@ var game = {
 			};
 		},self);
 		
+		// FIXME add using quadtree
+		/*
 		var nearest = self.mouse==null ? [] : 
 			self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, Math.min(self.root.dotslength-5,100));
 		var diff = self.root.lastdots.diff(nearest);
@@ -185,19 +201,33 @@ var game = {
 			}
 		}
 		self.root.lastdots = nearest.splice(0);
-		
+		*/
+		// FIXME  END  add using quadtree
 		
 		
 		for(var i=0,d=null;d=this.root.dots[i];i++){
 			// DOT GRAVITY
 			var colliders = [];
 			if(this.gamemode.current & this.gamemode.ALLDOTS) {
-				var neardot = self.kdTree.nearest({'x':d.x,'y':d.y}, 2);
+				// DETERMINE OPTIMISED SEARCH ALGORITHM
+				var neardot;
+				var sortMethod;
+				if( this.gamemode.current & this.gamemode.KDTREE ){
+					neardot = self.kdTree.nearest({'x':d.x,'y':d.y}, 2);
+					sortMethod=this.gamemode.KDTREE;
+				} else if ( this.gamemode.current & this.gamemode.QUADTREE ) {
+					neardot = self.quadTree.retrieve({x:d.x, y:d.y, height:10, width:10});
+					sortMethod=this.gamemode.QUADTREE;
+				}
+				//timer.each(100,function(){console.log(neardot.length)},this);
+				
+				
 				for(var k=0,m=null;m=neardot[k];k++){
-					var nd = m[0];
+					var nd = (sortMethod==this.gamemode.KDTREE) ? m[0] : m;
 					if( nd==d ) continue;
-					//timer.each(500,function(){console.log(nd)},this);
+					
 					var distance = nd.distance(nd,d);
+					
 					if(distance < 1 && this.gamemode.current & this.gamemode.ALLDOTS){
 						var ix = this.root.dots.indexOf(nd);
 						this.root.dots.splice(ix,1); // nd is never d, so parent loop should not fail
@@ -226,7 +256,6 @@ var game = {
 					}
 				}
 			}
-			
 			d.tick(t,game);
 			
 			d.ax = 0;
@@ -262,21 +291,69 @@ var game = {
 		
 		c.fillStyle = 'black';
 		c.font = '9pt DejaVu Sans';
-		c.fillText(this.runtime, 10, 20);
-		c.fillText('Particles: '+this.root.dotslength, 10, 40);
 		
-		c.fillText('energy: '+this.energy.toLocaleString(), 10, 60);
-		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
+		// FPS Graph
+		(function(){
+			c.strokeStyle = '#333';
+			var graphLeft = game.width-205;
+			var graphTop = 5;
+			var graphBottom = 10;
+			var graphHeight = 50;
+			var graphWidth = 200;
+			
+			//c.strokeStyle = 'white';
+			c.lineWidth = 1;
+			c.fillStyle = 'black';
+			//c.fillRect(graphLeft,graphTop, graphWidth, graphHeight);
+			
+			for(var i=0,e=game.fpsCounter.length;i<e;i++){
+				c.moveTo(graphLeft+i*2+0.5,graphBottom);
+				c.lineTo(graphLeft+i*2+0.5,graphBottom + game.fpsCounter[i]);
+				c.stroke();
+			}
+		})();
+		
+//		timer.each(1000,function(){console.log(this.quadTree.root)},this);
+		function drawNode(node){
+			for(var i=0;i<4;i++){
+				var cn = node.nodes[i];
+				if(cn)drawNode(cn)
+				else {
+					var bounds = node._bounds;
+					c.beginPath();
+					c.rect(bounds.x,bounds.y,bounds.width,bounds.height);
+					c.stroke();
+				}
+			}
+		}
+		if(this.settings.DRAWNODES){
+			c.strokeStyle = '#f8f8f8';
+			c.lineWidth = 1;
+			drawNode(this.quadTree.root);
+		}
+		// FPS counter (text)
+		var fps = game.fpsCounter.reduce(function(a, b) { return a ? (a + b) : b }) / game.fpsCounter.length;
+		c.fillText((1000/fps).toLocaleString(), 10, 20);
+			
+		c.fillText(this.runtime, 10, 40);
+		c.fillText('Particles: '+this.root.dotslength, 10, 60);
+		
+		c.fillText('energy: '+this.energy.toLocaleString(), 10, 80);
+		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,100);
 		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
-		
 		for(var i=0,d;d=this.root.dots[i];i++){
+			// Fetch color settings and size of circle
 			c.fillStyle = d.color;
-			var size = Math.sqrt(d.size)*2;
-			c.fillRect(d.x-size/2, d.y-size/2, size,size);
+			var size = Math.sqrt(d.size);
+			
+			// Draw a filled circle to represent each particle
 			/*c.beginPath();
-			c.arc(d.x, d.y, 3, 0,2*Math.Pi, false);
+			c.arc(d.x, d.y, size, 0,Math.PI*2, false);
+			c.closePath();
 			c.fill();*/
+			// Draw rectangle
+			c.fillRect(d.x-size/2, d.y-size/2, size, size);
 		}
 	},
 	
@@ -318,6 +395,8 @@ var game = {
 			
 		}*/
 		game.lastStepRTC = +new Date;
+		game.fpsIndex = ++game.fpsIndex%100;
+		game.fpsCounter[game.fpsIndex] = (game.lastStepRTC - now);
 		return requestAnimationFrame(game.step);
 	},
 	distance : function(a,b){
