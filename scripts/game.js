@@ -355,7 +355,7 @@ var game = {
 					var bounds = node._bounds;
 					c.beginPath();
 					c.rect(bounds.x,bounds.y,bounds.width,bounds.height);
-					c.stroke();
+					c.fill();
 				}
 			}
 		}
@@ -435,8 +435,6 @@ var game = {
 	distance : function(a,b){
 		return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
 	}
-	
-	
 };
 
 document.addEventListener('DOMContentLoaded', function () {
