@@ -2,13 +2,13 @@
 
 //require(["shims.js"]);
 
-var timer = {
-	register:{},
+function Timer() {
+	this.register = {};
 	
 	/**
 	* Calls callback only is the number of milliseconds have elapsed since last time
 	*/
-	each : function(ms, callback, reference){
+	this.each = function(ms, callback, reference){
 		var key = callback.toString().hashCode();
 		if( !(key in this.register) ) this.register[key] = +new Date;
 		
@@ -23,8 +23,9 @@ var timer = {
 			callback.call(reference);
 		}
 		//console.log(callback.toString().hashCode());
-	}
+	};
 };
+var timer = new Timer();
 
 
 var game = {
@@ -103,7 +104,7 @@ var game = {
 			//game.mouse = {x:e.clientX, y:e.clientY};
 			game.mouse = {x: e.pageX-this.offsetLeft, y:e.pageY-this.offsetTop};
 		},false);
-		canvas.addEventListener('mouseout',function(){game.mouse=null},false);
+		canvas.addEventListener('mouseout',function(){game.mouse=null;},false);
 		
 		//this.root.dots = [new Dot(10,40),new Dot(80,150),new Dot(350,440)];
 		var size = this.settings.PARTICLES;
@@ -140,10 +141,10 @@ var game = {
 		self.mouseButton=[0, 0, 0, 0, 0, 0, 0, 0, 0];
 		document.body.onmousedown = function(evt) { 
 		  ++self.mouseButton[evt.button];
-		}
+		};
 		document.body.onmouseup = function(evt) {
 		  --self.mouseButton[evt.button];
-		}
+		};
 		//console.log(this.root.dots);
 		//this.animFrame = window.requestAnimationFrame(game.tick);
 		//this.animator.add(this.loop
@@ -165,12 +166,6 @@ var game = {
 		},this);*/
 		
 		this.quadTree.clear();
-		// FIXME: this is probably overkill, but need new bounds when resize so do that only then?
-		/*var bounds = {x:0,y:0,width:game.width,height:game.height};
-		var pointQuad = true;
-		var maxDepth = 8;
-		var maxChildren = 8;
-		this.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);*/
 		this.quadTree.insert(this.root.dots);
 		
 		// IF MOUSE BUTTON PRESSED, CREATE PARTICLES
@@ -182,7 +177,6 @@ var game = {
 				this.root.dotslength = this.root.dots.length;
 			};
 		},self);
-
 		
 		
 		
@@ -195,7 +189,7 @@ var game = {
 
 		// restore old dots
 		for(var i=0,j=diff.length;i<j;i++){
-			//var dot = diff[i][0]; // ONLY USING KDTree
+			//var dot = diff[i][0]; // KDTree has encapsulated the object within a secondary array
 			var dot = diff[i];
 			dot.color = 'black';
 			dot.ax = 0;
