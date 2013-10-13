@@ -60,8 +60,18 @@ var game = {
 	kdtree:null,
 	quadTree:null,
 	state:{running:0},
-	gamemode:{current:(1+4+16+64+128),GRAVITY:2,EXPLOSIVE:1,FRICTION:4,MERGE:8,ALLDOTS:16,SELFGRAVITY:32,SELFEXPLOSIVE:64,QUADTREE:128},
-	settings:{DRAWNODES:true,PARTICLES:800},
+	gamemode:{
+		current:(1+4+16+64+128),
+		EXPLOSIVE:1,
+		GRAVITY:2,
+		FRICTION:4,
+		MERGE:8,
+		ALLDOTS:16,
+		SELFGRAVITY:32,
+		SELFEXPLOSIVE:64,
+		QUADTREE:128
+	},
+	settings:{DRAWNODES:false,PARTICLES:500},
 	energy:0,
 	
 	init : function(){
@@ -80,7 +90,7 @@ var game = {
 			
 			var bounds = {x:0,y:0,width:game.width,height:game.height};
 			var pointQuad = true;
-			var maxDepth = 10;
+			var maxDepth = 16;
 			var maxChildren = 4;
 			game.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
 		},false);
@@ -111,7 +121,7 @@ var game = {
 		//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 		var bounds = {x:0,y:0,width:game.width,height:game.height};
 		var pointQuad = true;
-		var maxDepth = 10;
+		var maxDepth = 16;
 		var maxChildren = 4;
 		this.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
 		this.quadTree.insert(this.root.dots);
@@ -172,17 +182,21 @@ var game = {
 				this.root.dotslength = this.root.dots.length;
 			};
 		},self);
+
+		
+		
 		
 		// FIXME add using quadtree
-		/*
-		var nearest = self.mouse==null ? [] : 
-			self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, Math.min(self.root.dotslength-5,100));
+		/*var nearest = self.mouse==null ? [] : 
+			self.kdTree.nearest({'x':self.mouse.x,'y':self.mouse.y}, Math.min(self.root.dotslength-5,100));*/
+		var nearest = self.mouse==null ? [] :
+			self.quadTree.retrieve({x:self.mouse.x,y:self.mouse.y,height:100,width:100});
 		var diff = self.root.lastdots.diff(nearest);
 
 		// restore old dots
 		for(var i=0,j=diff.length;i<j;i++){
-			var dot = diff[i][0];
-			//dot.size = 3;
+			//var dot = diff[i][0]; // ONLY USING KDTree
+			var dot = diff[i];
 			dot.color = 'black';
 			dot.ax = 0;
 			dot.ay = 0;
@@ -190,32 +204,35 @@ var game = {
 		
 		// color new dots
 		for(var i=0,j=nearest.length;i<j;i++){
-			var dot = nearest[i][0];
-			//dot.size = 5;
+			//var dot = nearest[i][0]; // ONLY USING KDTree
+			var dot = nearest[i];
 			dot.color = 'green';
+			var mousedist = dot.distance(dot,self.mouse);
 			
 			// Move away
 			if(this.gamemode.current & this.gamemode.GRAVITY){
 				var GRAVITY_MODIFIER = 0.05;
-				if(dot.distance(dot,self.mouse) < 100*100){
+				if( mousedist < 100*100 ){
 					dot.ax = (self.mouse.x-dot.x)/self.width*GRAVITY_MODIFIER;
 					dot.ay = (self.mouse.y-dot.y)/self.height*GRAVITY_MODIFIER;
 				}
 			} 
 			else if(this.gamemode.current & this.gamemode.EXPLOSIVE) {
-				if(dot.distance(dot,self.mouse) < 50*50){
+				if( mousedist < 100*100 ){
+					var MODIFIER = 0.01;
 					//dot.ax = (dot.x-self.mouse.x)/self.width;
 					//dot.ay = (dot.y-self.mouse.y)/self.height;
 					var dx = dot.x-self.mouse.x;
 					var dy = dot.y-self.mouse.y;
-					dot.ax = 1/Math.min(dx*dx*dx,100);
-					dot.ay = 1/Math.min(dy*dy*dy,100);
+					dot.ax = (1/Math.min(mousedist,1))*MODIFIER*Math.sign(dx);
+					dot.ay = (1/Math.min(mousedist,1))*MODIFIER*Math.sign(dy);
 				}
 			}
 		}
 		self.root.lastdots = nearest.splice(0);
-		*/
 		// FIXME  END  add using quadtree
+		
+		
 		
 		
 		for(var i=0,d=null;d=this.root.dots[i];i++){
@@ -251,15 +268,17 @@ var game = {
 						//console.log('COLLISION',d,nd);
 						
 						if(this.gamemode.current & this.gamemode.SELFEXPLOSIVE) {
-							nd.ax = (nd.x-d.x)/self.width;
-							nd.ay = (nd.y-d.y)/self.height;
+							var MODIFIER = 10000;
+							nd.ax = (nd.x-d.x)/MODIFIER;
+							nd.ay = (nd.y-d.y)/MODIFIER;
 							nd.color='red';
 							d.color = 'purple';
 							d.ax = -nd.ax;
 							d.ay = -nd.ay;
 						} else if(this.gamemode.current & this.gamemode.SELFGRAVITY){
-							nd.ax = (d.x-nd.x)/self.width;
-							nd.ay = (d.y-nd.y)/self.height;
+							var MODIFIER = 10000;
+							nd.ax = (d.x-nd.x)/MODIFIER;
+							nd.ay = (d.y-nd.y)/MODIFIER;
 							nd.color='red';
 							d.color = 'purple';
 							d.ax = -nd.ax;

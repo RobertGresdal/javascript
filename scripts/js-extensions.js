@@ -16,3 +16,6 @@ Array.prototype.unique = function() {
 		return self.indexOf(value) === index;
 	} );
 };
+Math.sign = function(a) {
+	return a<0 ? -1 : 1;
+}
