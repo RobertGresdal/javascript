@@ -405,24 +405,3 @@ var game = {
 		return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
 	}
 };
-
-document.addEventListener('DOMContentLoaded', function () {
-	function load(){
-		console.log('Running game');
-		
-		timer = new Timer();
-		game.init();
-		game.start();
-	}
-
-	var check = new Readycheck();
-	check.loadScripts([
-	    'scripts/QuadTree.js',
-	    'scripts/kdTree-min.js',
-	    'scripts/js-extensions.js',
-	    'scripts/shims.js',
-	    'scripts/dot.js',
-	    'scripts/Timer.js',
-	    'scripts/game.js'
-	], load);
-});
