@@ -1,32 +1,6 @@
 'use strict';
 
-//require(["shims.js"]);
-
-function Timer() {
-	this.register = {};
-	
-	/**
-	* Calls callback only is the number of milliseconds have elapsed since last time
-	*/
-	this.each = function(ms, callback, reference){
-		var key = callback.toString().hashCode();
-		if( !(key in this.register) ) this.register[key] = +new Date;
-		
-		var now = +new Date;
-		var diff = now - this.register[key];
-		
-		if( diff > ms ) {
-			// reduce the timer so that it will again wait until the opportune time to run
-			this.register[key] = +new Date + ms - diff;
-			this.register[key] = Math.min(this.register[key], now+ms);
-			
-			callback.call(reference);
-		}
-		//console.log(callback.toString().hashCode());
-	};
-};
-var timer = new Timer();
-
+var timer=null;
 
 var game = {
 	context : null,
@@ -112,7 +86,8 @@ var game = {
 		for(var i=0;i<size;i++){
 			this.root.dots[i] = new Dot(
 				Math.random()*game.width, Math.random()*game.height,
-				Math.random()/10-0.05,Math.random()/10-0.05,
+				/*Math.random()/10-0.05,Math.random()/10-0.05,*/
+				0,0,
 				0,0
 			);
 		};
@@ -432,6 +407,22 @@ var game = {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
-  game.init();
-  game.start();
+	function load(){
+		console.log('Running game');
+		
+		timer = new Timer();
+		game.init();
+		game.start();
+	}
+
+	var check = new Readycheck();
+	check.loadScripts([
+	    'scripts/QuadTree.js',
+	    'scripts/kdTree-min.js',
+	    'scripts/js-extensions.js',
+	    'scripts/shims.js',
+	    'scripts/dot.js',
+	    'scripts/Timer.js',
+	    'scripts/game.js'
+	], load);
 });
