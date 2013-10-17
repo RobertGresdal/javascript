@@ -2,6 +2,17 @@ function Readycheck(){
 	this.sets = {};
 	this.setsIndex = 0;
 	
+	/** open() has not been called yet. */
+	this.UNSENT = 0;
+	/** send() has not been called yet. */
+	this.OPENED = 1;
+	/** send() has been called, and headers and status are available. */
+	this.HEADERS_RECEIVED = 2;
+	/** Downloading; responseText holds partial data. */
+	this.LOADING = 3;
+	/** The operation is complete. */
+	this.DONE = 4;
+	
 	/**
 	 * @constructor
 	 */
@@ -15,8 +26,7 @@ function Readycheck(){
 	 * @param callback function
 	 * @private
 	 */
-	function loadScript(url, callback)
-	{
+	this.loadScript = function (url, callback) {
 	    // Add the script tag to the head element
 	    var head = document.getElementsByTagName('head')[0];
 	    var script = document.createElement('script');
@@ -25,8 +35,8 @@ function Readycheck(){
 
 	    // Bind the event to the callback function.
 	    script.onreadystatechange = function(e){
-	    	if(e.readyState==4){
-	    		// TODO P1 add to list of finished urls. when list completed, then call the sets callback
+	    	if(e.readyState == Readycheck.DONE){
+	    		callback.call(e);
 	    	}
 	    };
 //	    script.onload = callback;
@@ -44,24 +54,46 @@ Readycheck.prototype.add = function(urls, callback, setName){
 	if( ! urls instanceof Array ) urls = [urls.toString()];
 	setName = (setName instanceof String) ? setName : 'set'+this.setsIndex;
 
-	this.sets.setName = {
+	this.sets[setName] = {
 		'urls':urls,
-		'callback':callback
+		'callback':callback,
+		'status':[]
 	};
-	
 	this.setsIndex++;
+	
 	return setName;
 };
 
 
-Readycheck.prototype.loadScript(urls, setName, callback){
-	this.add(urls, setName, callback);
+Readycheck.prototype.loadScripts = function(urls, callback, setName){
+	var sn = this.add(urls, setName, callback);
+	setName = (setName && setName.length>0) ? setName : sn; 
 	
-	this.loadScript();
+	for(var i=0,s;s=urls[i];i++){
+		var set = this.sets[setName];
+		var status = set.status;
+		var statusChange = function(e){
+			status[i] = e.readyState;
+			if( this.readyCheck(set) ) {
+				set.callback.call(this);
+			}
+		};
+		this.loadScript(s, statusChange);
+	};
+	
 };
 
 
 Readycheck.prototype.getSets = function(){
 	return Object.keys(this.sets);
-}
+};
 
+Readycheck.prototype.readyCheck = function(setName){
+	var length = this.sets.setName.urls.length;
+	for(var i=0,end=length;i<end;i++){
+		var s=this.sets.setName.status[i];
+		if( s !== Readycheck.DONE ){
+			return false;
+		} else return true;
+	};
+};
