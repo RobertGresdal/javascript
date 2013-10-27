@@ -1,3 +1,23 @@
 <script type="text/javascript" src="scripts/Readycheck.js"></script>
+<script>
+(function () {
+	var check = new Readycheck();
+	check.loadScript([
+	    'scripts/QuadTree.js',
+	    'scripts/kdTree-min.js',
+	    'scripts/js-extensions.js',
+	    'scripts/shims.js',
+	    'scripts/dot.js',
+	    'scripts/Timer.js',
+	    'scripts/game.js'
+	], begin, 'scripts');
+	
+	function begin(){
+		timer = new Timer();
+		game.init();
+		game.start();
+	}
+})();
+</script>
 <p>Particles will avoid all other particles and in particular the mouse cursor. Click to create particles.</p>
 <canvas id="game" width="400" height="300" style="border:1px solid black;"/>

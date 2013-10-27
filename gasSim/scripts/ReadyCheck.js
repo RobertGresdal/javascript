@@ -45,19 +45,12 @@ function Readycheck(){
 	    script.type = 'text/javascript';
 	    
 	    script.src = set.urls[i];
-	    /*script.onload = function(e){
-//	    	console.log('newstatus',i,set);
-	    	self.setStatus(set,i,true);
-	    	if( self.readyCheck(set) == true ){
-	    		set.callback.call(this);
-	    	}
-	    };*/
 	    script.addEventListener('load',function(e){
 //	    	console.log('newstatus',i,set);
-	    	self.setStatus(set,i,true);
-	    	if( self.readyCheck(set) == true ){
+	    	self.setStatus(set,i,true); // FIXME
+	    	/*if( self.readyCheck(set) == true ){
 	    		set.callback.call(this);
-	    	}
+	    	}*/
 	    },false);
 	    
 	    
@@ -77,6 +70,10 @@ function Readycheck(){
 	
 	Readycheck.prototype.setStatus = function(set, index, status){
 		set.status[index] = status;
+		
+		if( this.readyCheck(set) ){
+			set.callback.call(this);
+    	}
 	};
 	
 	Readycheck.prototype.add = function(urls, callback, setName){
@@ -127,8 +124,7 @@ function Readycheck(){
 	};
 
 	Readycheck.prototype.readyCheck = function(set){
-		console.log(set);
-		for( var i=0,length=set.urls.length; i<length; i++ ){
+		for( var i=0,l=set.status.length; i<l; i++ ){
 			if( set.status[i] != true ){
 				return false;
 			} else {
@@ -137,28 +133,4 @@ function Readycheck(){
 			}
 		};
 	};
-	
-	
-	
-	document.addEventListener('DOMContentLoaded', function () {
-		console.log('loading scripts');
-		var check = new Readycheck();
-		check.loadScript([
-		    'scripts/QuadTree.js',
-		    'scripts/kdTree-min.js',
-		    'scripts/js-extensions.js',
-		    'scripts/shims.js',
-		    'scripts/dot.js',
-		    'scripts/Timer.js',
-		    'scripts/game.js'
-		], foobar, 'scripts');
-		
-		function foobar(){
-			console.log('Running game');
-			
-			timer = new Timer();
-			game.init();
-			game.start();
-		}
-	});
 })();
