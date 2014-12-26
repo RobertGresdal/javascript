@@ -1,0 +1,42 @@
+<head>
+	<script type="text/javascript" src="scripts/Readycheck.js"></script>
+	<script>
+	document.addEventListener('DOMContentLoaded',function(){
+			var check = new Readycheck();
+			check.loadScript([
+			    //'scripts/QuadTree.js',
+			    //'scripts/kdTree-min.js',
+			    //'scripts/js-extensions.js',
+			    //'scripts/shims.js',
+			    'scripts/cell.js',
+			    'scripts/Timer.js',
+			    'scripts/game.js'
+			], begin, 'scripts');
+			document.querySelector("#run").addEventListener('click',function(){game.toggleRun()});
+			document.querySelector("#FPSGraph").addEventListener('change',function(){game.settings.showFPSGraph = this.checked;});
+
+			function begin(){
+				console.log('Initializing')
+				timer = new Timer();
+				game.init();
+				//game.start();
+			}
+		}
+	);
+	</script>
+	<style>
+	#controls {
+		position:absolute;
+		right:10px;
+		width:340px;
+		border:1px solid black;
+		padding:10px;
+	}
+	</style>
+<head>
+
+<div id="controls">
+	<input type="button" id="run" value="start"/>
+	<label><input type="checkbox" id="FPSGraph" checked/> Display FPS Graph
+</div>
+<canvas id="game" width="400" height="300" style="border:1px solid black;"/>
