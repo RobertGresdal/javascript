@@ -4,10 +4,6 @@
 	document.addEventListener('DOMContentLoaded',function(){
 			var check = new Readycheck();
 			check.loadScript([
-			    //'scripts/QuadTree.js',
-			    //'scripts/kdTree-min.js',
-			    //'scripts/js-extensions.js',
-			    //'scripts/shims.js',
 			    'scripts/cell.js',
 			    'scripts/Timer.js',
 			    'scripts/game.js'
@@ -25,18 +21,26 @@
 	);
 	</script>
 	<style>
+	html {
+		background-color: #1b1b1c;
+		color:white;
+	}
 	#controls {
 		position:absolute;
 		right:10px;
 		width:340px;
-		border:1px solid black;
+		border:1px solid white;
 		padding:10px;
 	}
 	</style>
 <head>
 
 <div id="controls">
-	<input type="button" id="run" value="start"/>
-	<label><input type="checkbox" id="FPSGraph" checked/> Display FPS Graph
+	<div class="options">
+		<label><input type="checkbox" id="FPSGraph" checked/> Show FPS Graph</label>
+	</div>
+	<div>
+		<input type="button" id="run" value="start"/>
+	</div>
 </div>
-<canvas id="game" width="400" height="300" style="border:1px solid black;"/>
+<canvas id="game" width="400" height="300" style="border:1px solid white;"/>
