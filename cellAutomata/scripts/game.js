@@ -1,225 +1,141 @@
-'use strict';
+"use strict";
 
-var timer=null;
-
-var game = {
-	context : null,
-	width: null,
-	height: null,
-	timer: 0,
-	runtime: 0,
-	debug:1,
-	/** ms accuracy of simulation steps performed, 10 means 100 calculations a second, 20 means 50. */
-	stepAccuracy: 10,
+function Game() {
+	this.context = null;
+	this.width = document.body.clientWidth - 400;
+	this.height = document.body.clientHeight - 80;
+	this.timer = 0;
+	this.runtime = 0;
+	this.debug = 1;
+	/** ms accuracy of simulation steps performed,
+	* 10 means 100 calculations a second, 20 means 50. */
+	this.stepAccuracy = 10;
 	/** counter of steps performed during a tick */
-	steps:0,
+	this.steps = 0;
 	/** Holds the handle for the requestAnimationFrame clock */
-	animFrame: null,
+	this.animFrame = null;
 	/** Holds the timestamp from when the last step was finished */
-	lastStepRTC:null,
+	this.lastStepRTC = null;
 	/** Counts the ms between the last 5 frames */
-	fpsCounter:[0,0,0,0,0],
-	fpsIndex:-1,
-	/** Count upwards towards the rtc for the step counter, so we know when to run a simulation step */
-	stepCatchupRTC:null,
+	this.fpsCounter = [0,0,0,0,0];
+	this.fpsIndex = -1;
+	/** Count upwards towards the rtc for the step counter, so we know when to
+	* run a simulation step */
+	this.stepCatchupRTC = null;
 	/** Clock for comparing rendering timings with the rtc */
-	renderCatchupRTC:null,
+	this.renderCatchupRTC = null;
 	/** Real Time Counter since animation start */
-	rtc:0,
+	this.rtc = 0;
 	/** Timestamp from when start were called */
-	animStart:null,
+	this.animStart = null;
 	/** Holds mouse position over the canvas */
-	mouse:null,
-	mouseButton:null,
-	root:{cells:[],cellsLastTick:[],numCells:0},
-	state:{running:0},
-	gameflags:{
-		DUMMY:1,
-	},
-	settings:{numOfCells:500,showFPSGraph:true},
+	this.mouse = null;
+	this.mouseButton = null;
+	this.root = {
+		cells: [],
+		cellsLastTick: [],
+		numCells: 0
+	};
+	this.state = { running:0 };
+	this.gameflags = {
+		DUMMY: 1,
+	};
+	this.settings = { numOfCells:500, showFPSGraph:true };
+	this.topo = new Topology(0, 0, this.width, this.height);
+}
 
-	init : function(){
-		var self = this;
-		var canvas = document.querySelector('#game');
-		//game.fpsCounter = new Array(100);
+Game.prototype.init = function() {
+		var self = this,
+			canvas = document.querySelector("#game");
+		//this.fpsCounter = new Array(100);
 
 		// WINDOW SIZE AND RESIZE
-		game.width = document.body.clientWidth - 400;
-		game.height = document.body.clientHeight - 80;
-		window.addEventListener('resize',function(e){
-			game.width = document.body.clientWidth - 400;
-			game.height = document.body.clientHeight - 80;
-			canvas.width = game.width;
-			canvas.height = game.height;
+		canvas.width = this.width;
+		canvas.height = this.height;
+		this.context = canvas.getContext("2d");
 
-			var bounds = {x:0,y:0,width:game.width,height:game.height};
-			var pointQuad = true;
-			var maxDepth = 16;
-			var maxChildren = 4;
-			game.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
-		},false);
-		//.
-		canvas.width = game.width;
-		canvas.height = game.height;
-		this.context = canvas.getContext('2d');
+		window.addEventListener("resize", function(e) {
+			this.width = document.body.clientWidth - 400;
+			this.height = document.body.clientHeight - 80;
+			canvas.width = this.width;
+			canvas.height = this.height;
+			this.topo.update();
+		}, false);
 
-		canvas.addEventListener('mousemove',function(e){
-			game.mouse = {x: e.pageX-this.offsetLeft, y:e.pageY-this.offsetTop};
-		},false);
-		canvas.addEventListener('mouseout',function(){game.mouse=null;},false);
+		// Capture mouse movement
+		canvas.addEventListener("mousemove", function(e) {
+			this.mouse = { x:e.pageX - this.offsetLeft, y:e.pageY - this.offsetTop };
+		}, false);
+		canvas.addEventListener("mouseout", function() { this.mouse = null; }, false);
 
 		/**
 		* Initialize cells
 		*/
 		this.root.cells = new Array(this.settings.numOfCells);
-		for(var i=0;i<this.settings.numOfCells;i++){
+		for (var i = 0; i < this.settings.numOfCells; i++ ) {
 			this.root.cells[i] = new Cell();
 		};
 		this.root.numCells = this.root.cells.length;
 
-
-		// QUADTREE
-		/*
-		//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
-		var bounds = {x:0,y:0,width:game.width,height:game.height};
-		var pointQuad = true;
-		var maxDepth = 16;
-		var maxChildren = 4;
-		this.quadTree = new QuadTree(bounds, pointQuad, maxDepth, maxChildren);
-		this.quadTree.insert(this.root.dots);
-		*/
-
 		// Track state of mousbuttons as a read-on-demand variable
-		self.mouseButton=[0, 0, 0, 0, 0, 0, 0, 0, 0];
+		self.mouseButton = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
 		document.body.onmousedown = function(evt) {
-		  ++self.mouseButton[evt.button];
+		  self.mouseButton[evt.button]++;
 		};
 		document.body.onmouseup = function(evt) {
-		  --self.mouseButton[evt.button];
+		  self.mouseButton[evt.button]--;
 		};
-	},
-
-
-
-
-
-
-
+}
 
 	/**
 	* Calls game logic and simulation
 	* @function
 	* @private
 	*/
-	tick : function(t) {
+Game.prototype.tick = function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
-		var self=this;
-		this.energy=0;
+		var self = this;
+		this.energy = 0;
 
-		// Update the k-d Tree
-		/* timer.each(100,function(){
-			this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
-		},this);	*/
-
-		// Update the QuadTree
-		/*	this.quadTree.clear();
-		this.quadTree.insert(this.root.dots);		*/
-
-
-		// FIXME add using quadtree
-		/*var nearest = self.mouse==null ? [] :
-			self.quadTree.retrieve({x:self.mouse.x,y:self.mouse.y,height:100,width:100});
-		var diff = self.root.lastdots.diff(nearest);*/
-/*
-		// restore old dots
-		for(var i=0,j=diff.length;i<j;i++){
-			//var dot = diff[i][0]; // KDTree has encapsulated the object within a secondary array
-			var dot = diff[i];
-			dot.color = 'black';
-			dot.ax = 0;
-			dot.ay = 0;
-		}
-
-		// color new dots
-		for(var i=0,j=nearest.length;i<j;i++){
-			//var dot = nearest[i][0]; // ONLY USING KDTree
-			var dot = nearest[i];
-			dot.color = 'green';
-			var mousedist = dot.distance(dot,self.mouse);
-
-			// Move away
-			if(this.gamemode.current & this.gamemode.GRAVITY){
-				var GRAVITY_MODIFIER = 0.05;
-				if( mousedist < 100*100 ){
-					dot.ax = (self.mouse.x-dot.x)/self.width*GRAVITY_MODIFIER;
-					dot.ay = (self.mouse.y-dot.y)/self.height*GRAVITY_MODIFIER;
-				}
-			}
-			else if(this.gamemode.current & this.gamemode.EXPLOSIVE) {
-				if( mousedist < 100*100 ){
-					var MODIFIER = 0.01;
-					//dot.ax = (dot.x-self.mouse.x)/self.width;
-					//dot.ay = (dot.y-self.mouse.y)/self.height;
-					var dx = dot.x-self.mouse.x;
-					var dy = dot.y-self.mouse.y;
-					dot.ax = (1/Math.min(mousedist,1))*MODIFIER*Math.sign(dx);
-					dot.ay = (1/Math.min(mousedist,1))*MODIFIER*Math.sign(dy);
-				}
-			}
-		}
-		self.root.lastdots = nearest.splice(0);
-		// FIXME  END  add using quadtree
-*/
-
+		//topo.update();
 	},
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	/**
 	* Performs the drawing to screen
 	* @function
 	* @private
 	*/
-	render : function() {
+Game.prototype.render = function() {
 		var c = this.context;
-		c.fillStyle = 'white';
-		c.fillRect(0,0,game.width,game.height);
+		c.fillStyle = "#333";
+		c.fillRect(0, 0, this.width, this.height);
 
-		c.fillStyle = 'black';
-		c.font = '9pt DejaVu Sans';
+		c.fillStyle = "black";
+		c.font = "9pt DejaVu Sans";
+
+		this.topo.render(c);
 
 		// FPS Graph
-		if( game.settings.showFPSGraph ){
-			c.strokeStyle = '#333';
-			var graphLeft = game.width-205;
-			var graphTop = 5;
-			var graphBottom = 10;
-			var graphHeight = 50;
-			var graphWidth = 200;
-
+		if ( this.settings.showFPSGraph ){
+			c.strokeStyle = "#333";
 			c.lineWidth = 1;
-			c.fillStyle = 'black';
+			c.fillStyle = "black";
+			var graphLeft = (this.width - 205),
+				graphTop = 5,
+				graphBottom = 10,
+				graphHeight = 50,
+				graphWidth = 200;
 
-			for(var i=0,e=game.fpsCounter.length;i<e;i++){
-				c.moveTo(graphLeft+i*2+0.5,graphBottom);
-				c.lineTo(graphLeft+i*2+0.5,graphBottom + game.fpsCounter[i]);
+
+			for (var i = 0, e = this.fpsCounter.length; i < e; i++) {
+				c.moveTo(graphLeft + i * 2 + 0.5, graphBottom);
+				c.lineTo(graphLeft + i * 2 + 0.5, graphBottom + this.fpsCounter[i]);
 				c.stroke();
 			}
 		};
 
 		// FPS counter (text)
-		var fps = game.fpsCounter.reduce(function(a, b) { return a ? (a + b) : b }) / game.fpsCounter.length;
+		var fps = this.fpsCounter.reduce(function(a, b) { return a ? (a + b) : b }) / this.fpsCounter.length;
 		c.fillText((1000/fps).toLocaleString(), 10, 20);
 
 		c.fillText(this.runtime, 10, 40);
@@ -242,69 +158,56 @@ var game = {
 			// Draw rectangle
 			//c.fillRect(d.x-size/2, d.y-size/2, size, size);
 		}
-	},
+}
 
 
 
 
-
-
-
-
-
-
-	toggleRun : function(){
-		if( game.state.running == 1){
-			game.pause();
+Game.prototype.toggleRun = function() {
+		if( this.state.running == 1){
+			this.pause();
 		} else {
-			if( ! game.animStart ){
-				game.start();
+			if( ! this.animStart ){
+				this.start();
 			} else {
-				game.resume();
+				this.resume();
 			}
 		}
-	},
-	start : function(){
+	}
+
+Game.prototype.start = function(){
 		console.log('Starting simulation');
-		game.animStart = +new Date;
-		game.lastStepRTC = game.animStart;
-		game.state.running = 1;
-		game.animFrame = requestAnimationFrame(this.step);
-		//console.log(game.animStart);
-	},
-	pause : function(){
-		game.state.running = 0;
-		cancelAnimationFrame(game.animFrame);
-	},
-	resume: function(){
-		game.state.running = 1;
-		game.animFrame = requestAnimationFrame(this.step);
-	},
-	step : function(timestamp){
+		this.animStart = +new Date;
+		this.lastStepRTC = this.animStart;
+		this.state.running = 1;
+		this.animFrame = requestAnimationFrame(this.step);
+		//console.log(this.animStart);
+}
+Game.prototype.pause = function(){
+		this.state.running = 0;
+		cancelAnimationFrame(this.animFrame);
+}
+Game.prototype.resume = function(){
+		this.state.running = 1;
+		this.animFrame = requestAnimationFrame(this.step);
+}
+Game.prototype.step = function(timestamp){
 		var now = +new Date;
-		var diff = (now - game.lastStepRTC);
+		var diff = (now - this.lastStepRTC);
 
-		game.runtime += diff;
+		this.runtime += diff;
 
-		game.render();
+		this.render();
 
-		game.steps=0;
-		while( game.timer < (game.runtime - game.stepAccuracy) ){
-			game.tick(game.stepAccuracy);
-			game.timer += game.stepAccuracy;
-			game.steps++;
+		this.steps=0;
+		while( this.timer < (this.runtime - this.stepAccuracy) ){
+			this.tick(this.stepAccuracy);
+			this.timer += this.stepAccuracy;
+			this.steps++;
 		}
 
-		/*var progress;
-		if (start === null) start = timestamp;
-		progress = timestamp - start;
-		if (progress > this.stepAccuracy){
-			progress - this.stepAccuracy;
-
-		}*/
-		game.lastStepRTC = +new Date;
-		game.fpsIndex = ++game.fpsIndex%100;
-		game.fpsCounter[game.fpsIndex] = (game.lastStepRTC - now);
-		return requestAnimationFrame(game.step);
-	}
-};
+		this.lastStepRTC = +new Date;
+		this.fpsIndex = ++this.fpsIndex%100;
+		this.fpsCounter[this.fpsIndex] = (this.lastStepRTC - now);
+		return requestAnimationFrame(this.step);
+}

@@ -1,15 +1,15 @@
 /**
 * Lays items out on a 2D surface
 */
-function Map(bounds) {
+function Topology(x, y, width, height) {
 	this.items = [];
-	this.bounds = bounds;
+	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
 	this.options = { "showNodes":true };
 	this.init();
 }
 
-Map.prototype.render = function(ctx) {
+Topology.prototype.render = function(ctx) {
 	// TODO: display tree quadrons
 	function drawNode(node) {
 		var cn = null, i = 0, bounds = null;
@@ -32,7 +32,7 @@ Map.prototype.render = function(ctx) {
 		}
 }
 
-Map.prototype.add = function(item) {
+Topology.prototype.add = function(item) {
 	this.items.push(item);
 }
 
@@ -40,11 +40,11 @@ Map.prototype.add = function(item) {
 * Translates values from a property into something that can be rendered,
 * usually as x, y and color space.
 */
-Map.prototype.translate = function() {
+Topology.prototype.translate = function() {
 	// TODO: map to bounds, support zooming etc?
 }
 
-Map.prototype.init = function() {
+Topology.prototype.init = function() {
 	// TODO: Use QuadTree, but add an option to use kdTree later
 	//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 	var pointQuad = true,
@@ -53,7 +53,7 @@ Map.prototype.init = function() {
 	this.quadTree = new QuadTree(this.bounds, pointQuad, maxDepth, maxChildren);
 
 }
-Map.prototype.update = function() {
+Topology.prototype.update = function() {
 	// Update the QuadTree
 	this.quadTree.clear();
 	this.quadTree.insert(this.items);
@@ -63,6 +63,6 @@ Map.prototype.update = function() {
 	self.quadTree.retrieve({x:self.mouse.x,y:self.mouse.y,height:100,width:100});
 	var diff = self.root.lastdots.diff(nearest);*/
 }
-Map.prototype.insert = function(item) {
+Topology.prototype.insert = function(item) {
 	this.quadTree.insert(item);
 }
