@@ -1,3 +1,6 @@
 [submodule "gameOfLife"]
 	path = gameOfLife
 	url = C:/Users/Robert/Dropbox/Prosjekt/js-gameoflife/submod_temp
+[submodule "lib/sylvester"]
+	path = lib/sylvester
+	url = https://github.com/jcoglan/sylvester.git

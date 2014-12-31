@@ -45,7 +45,7 @@ function Game() {
 }
 
 Game.prototype.init = function() {
-		var self = this,
+		var game = this,
 			canvas = document.querySelector("#game");
 		//this.fpsCounter = new Array(100);
 
@@ -59,14 +59,14 @@ Game.prototype.init = function() {
 			this.height = document.body.clientHeight - 80;
 			canvas.width = this.width;
 			canvas.height = this.height;
-			this.topo.update();
+			game.topo.update();
 		}, false);
 
 		// Capture mouse movement
 		canvas.addEventListener("mousemove", function(e) {
-			this.mouse = { x:e.pageX - this.offsetLeft, y:e.pageY - this.offsetTop };
+			game.mouse = { x:e.pageX - game.offsetLeft, y:e.pageY - game.offsetTop };
 		}, false);
-		canvas.addEventListener("mouseout", function() { this.mouse = null; }, false);
+		canvas.addEventListener("mouseout", function() { game.mouse = null; }, false);
 
 		/**
 		* Initialize cells
@@ -78,12 +78,12 @@ Game.prototype.init = function() {
 		this.root.numCells = this.root.cells.length;
 
 		// Track state of mousbuttons as a read-on-demand variable
-		self.mouseButton = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+		game.mouseButton = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
 		document.body.onmousedown = function(evt) {
-		  self.mouseButton[evt.button]++;
+		  game.mouseButton[evt.button]++;
 		};
 		document.body.onmouseup = function(evt) {
-		  self.mouseButton[evt.button]--;
+		  game.mouseButton[evt.button]--;
 		};
 };
 
