@@ -30,6 +30,13 @@ Topology.prototype.render = function(ctx) {
 			ctx.lineWidth = 1;
 			drawNode(this.quadTree.root);
 		}
+
+		// Draw all the items on screen
+		for (i=0, end=this.items.length; i < end; i++) {
+			// TODO: use the class method to draw, but call it as a static method
+			// with the parameters required.
+			this.items[i].render();
+		}
 }
 
 Topology.prototype.add = function(item) {
