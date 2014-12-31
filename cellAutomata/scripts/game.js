@@ -46,7 +46,7 @@ function Game() {
 
 Game.prototype.init = function() {
 		var game = this,
-			canvas = document.querySelector("#game");
+			canvas = document.querySelector("#canvas");
 		//this.fpsCounter = new Array(100);
 
 		// WINDOW SIZE AND RESIZE
@@ -64,22 +64,23 @@ Game.prototype.init = function() {
 
 		// Capture mouse movement
 		canvas.addEventListener("mousemove", function(e) {
-			game.mouse = { x:e.pageX - game.offsetLeft, y:e.pageY - game.offsetTop };
+			game.mouse = { x:e.pageX - canvas.offsetLeft, y:e.pageY - canvas.offsetTop };
 		}, false);
 		canvas.addEventListener("mouseout", function() { game.mouse = null; }, false);
 
 		/**
 		* Initialize cells
 		*/
-		this.root.cells = new Array(this.settings.numOfCells);
+		/*this.root.cells = new Array(this.settings.numOfCells);
 		for (var i = 0; i < this.settings.numOfCells; i++ ) {
 			this.root.cells[i] = new Cell();
 		};
-		this.root.numCells = this.root.cells.length;
+		this.root.numCells = this.root.cells.length;*/
 
 		// Track state of mousbuttons as a read-on-demand variable
 		game.mouseButton = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
 		document.body.onmousedown = function(evt) {
+			console.log("Mouse button down ", evt.button);
 		  game.mouseButton[evt.button]++;
 		};
 		document.body.onmouseup = function(evt) {
@@ -95,8 +96,12 @@ Game.prototype.init = function() {
 Game.prototype.tick = function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
 		var self = this;
-		this.energy = 0;
 
+		if (this.mouseButton[0]){
+			var x = self.mouse.x,
+				y = self.mouse.y;
+			this.topo.add( new Particle(x,y) );
+		}
 		//topo.update();
 };
 
@@ -107,19 +112,21 @@ Game.prototype.tick = function(t) {
 	*/
 Game.prototype.render = function() {
 		var c = this.context;
-		c.fillStyle = "#333";
+		c.fillStyle = "#111";
 		c.fillRect(0, 0, this.width, this.height);
+
+		c.fillStyle = "green";
+		this.topo.render(c);
+		if(this.mouse)c.fillRect(this.mouse.x-10, this.mouse.y, 20, 20);
 
 		c.fillStyle = "black";
 		c.font = "9pt DejaVu Sans";
-
-		this.topo.render(c);
 
 		// FPS Graph
 		if ( this.settings.showFPSGraph ) {
 			c.strokeStyle = "white";
 			c.lineWidth = 1;
-			c.fillStyle = "black";
+			c.fillStyle = "red";
 			var graphLeft = (this.width - 205),
 				graphTop = 5,
 				graphBottom = 10,
@@ -139,20 +146,20 @@ Game.prototype.render = function() {
 		c.fillText((1000/fps).toLocaleString(), 10, 20);
 
 		c.fillText(this.runtime, 10, 40);
-		c.fillText('Particles: '+this.root.dotslength, 10, 60);
+		c.fillText('Particles: ' + this.topo.size, 10, 60);
 
 		//c.fillText('energy: '+this.energy.toLocaleString(), 10, 80);
 		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
-		for (var i = 0, d; d = this.root.cells[i]; i++) {
+		/*for (var i = 0, d; d = this.root.cells[i]; i++) {
 			// Fetch color settings and size of circle
 			c.fillStyle = d.color;
 			//var size = Math.sqrt(d.size);
 			var size = 1 + Math.log(d.size);
 
 			c.fillRect(d.x-size/2, d.y-size/2, size, size);
-		}
+		}*/
 };
 
 Game.prototype.step = function(timestamp) {

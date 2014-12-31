@@ -9,35 +9,45 @@ function Cell() {
 			return this._properties[variable]=value;
 		}
 	};*/
-	this._rules = [];
-
-	// TODO: remove intial property. used only for testing
-	this._property.x = Math.random();
-	this._property.y = Math.random();
 }
 
-Cell.prototype.toString = function(){
+Cell.prototype.toString = function() {
 	return JSON.stringify(this._property);
 }
 
-Cell.prototype.tick = function(input){
-	// call _rules on _properties
-	// TODO: this is just temporary
-	this._property.x *= 1.1 % 1;
-	this._property.y *= 1.1 % 1;
-
-	return output;
-}
+// ```other``` contains other cells closeby
+Cell.prototype.tick = function() {}
 
 Cell.prototype.render = function(ctx){
-	console.assert(typeof context !== 'CanvasRenderingContext2D', 'Invalid argument given, expected "CanvasRenderingContext2D"', context);
-
-	ctx.fillRect(-1,-1,2,2);
+	//console.assert(typeof ctx === "CanvasRenderingContext2D", "Invalid argument given, expected 'CanvasRenderingContext2D'", ctx);
+	Console.error("wrong render function called");
 }
 
 Particle.prototype = new Cell();			// Inherit Cell
 Particle.prototype.constructor = Cell;	// Otherwise instances of Particle would have a constructor of Cell
 function Particle(x, y) {
-	this._property.x = x;
-	this._property.y = y;
+	this.x = x;
+	this.y = y;
+}
+Particle.prototype.tick = function(other) {
+	// call _rules on _properties
+	// TODO: this is just temporary
+	//this.x *= 1.1 % 1;
+	//this.y *= 1.1 % 1;
+
+	return output;
+}
+Particle.prototype.render = function(ctx) {
+	ctx.fillStyle = "#888888";
+	ctx.fillRect(this.x, this.y, 2, 2);
+}
+
+Branch.prototype = new Cell();
+Branch.prototype.constructor = Cell;
+function Branch(r,length) {
+	this.r = r;
+	this.length = r;
+}
+Branch.prototype.tick = function() {
+
 }

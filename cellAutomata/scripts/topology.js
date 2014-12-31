@@ -21,7 +21,7 @@ Topology.prototype.render = function(ctx) {
 					bounds = node._bounds;
 					ctx.beginPath();
 					ctx.rect(bounds.x, bounds.y, bounds.width, bounds.height);
-					ctx.fill();
+					ctx.stroke();
 				}
 			}
 		}
@@ -32,15 +32,17 @@ Topology.prototype.render = function(ctx) {
 		}
 
 		// Draw all the items on screen
-		for (i=0, end=this.items.length; i < end; i++) {
+		ctx.fillStyle = "#888888";
+		for (i=0, end=this.size; i < end; i++) {
 			// TODO: use the class method to draw, but call it as a static method
 			// with the parameters required.
-			this.items[i].render();
+			this.items[i].render(ctx);
 		}
 }
 
 Topology.prototype.add = function(item) {
 	this.items.push(item);
+	this.size = this.items.length;
 }
 
 /**

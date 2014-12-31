@@ -1,6 +1,7 @@
 <head>
 	<script type="text/javascript" src="scripts/Readycheck.js"></script>
 	<script>
+	var timer, game;
 	document.addEventListener('DOMContentLoaded',function(){
 			var check = new Readycheck();
 			check.loadScript([
@@ -13,12 +14,12 @@
 
 			function begin(){
 				console.log('Initializing')
-				var timer = new Timer();
-				var game = new Game();
+				timer = new Timer();
+				game = new Game();
 
 				document.querySelector("#run").addEventListener('click',function(){game.toggleRun()});
 				document.querySelector("#FPSGraph").addEventListener('change',function(){game.settings.showFPSGraph = this.checked;});
-				
+
 				game.init();
 				//game.start();
 			}
@@ -48,4 +49,4 @@
 		<input type="button" id="run" value="start"/>
 	</div>
 </div>
-<canvas id="game" width="400" height="300" style="border:1px solid white;"/>
+<canvas id="canvas" width="400" height="300" style="border:1px solid white;"/>
