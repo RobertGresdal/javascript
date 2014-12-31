@@ -1,10 +1,10 @@
-function Cell(){
+function Cell() {
 	this.properties = {};
 	this.rules = [];
 }
-Cell.prototype.toMessage = function(){
-	return {};
+Cell.prototype.toString = function() {
+	return JSON.stringify(this.properties);
 };
-Cell.prototype.tick = function(ms,game){
+Cell.prototype.tick = function(ms, game) {
 	// call each rule
 }

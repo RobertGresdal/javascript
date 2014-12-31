@@ -4,16 +4,21 @@
 	document.addEventListener('DOMContentLoaded',function(){
 			var check = new Readycheck();
 			check.loadScript([
+					'scripts/topology.js',
 			    'scripts/cell.js',
 			    'scripts/Timer.js',
+					'scripts/QuadTree.js',
 			    'scripts/game.js'
 			], begin, 'scripts');
-			document.querySelector("#run").addEventListener('click',function(){game.toggleRun()});
-			document.querySelector("#FPSGraph").addEventListener('change',function(){game.settings.showFPSGraph = this.checked;});
 
 			function begin(){
 				console.log('Initializing')
-				timer = new Timer();
+				var timer = new Timer();
+				var game = new Game();
+
+				document.querySelector("#run").addEventListener('click',function(){game.toggleRun()});
+				document.querySelector("#FPSGraph").addEventListener('change',function(){game.settings.showFPSGraph = this.checked;});
+				
 				game.init();
 				//game.start();
 			}

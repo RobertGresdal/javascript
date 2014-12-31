@@ -85,7 +85,7 @@ Game.prototype.init = function() {
 		document.body.onmouseup = function(evt) {
 		  self.mouseButton[evt.button]--;
 		};
-}
+};
 
 	/**
 	* Calls game logic and simulation
@@ -98,7 +98,7 @@ Game.prototype.tick = function(t) {
 		this.energy = 0;
 
 		//topo.update();
-	},
+};
 
 	/**
 	* Performs the drawing to screen
@@ -116,8 +116,8 @@ Game.prototype.render = function() {
 		this.topo.render(c);
 
 		// FPS Graph
-		if ( this.settings.showFPSGraph ){
-			c.strokeStyle = "#333";
+		if ( this.settings.showFPSGraph ) {
+			c.strokeStyle = "white";
 			c.lineWidth = 1;
 			c.fillStyle = "black";
 			var graphLeft = (this.width - 205),
@@ -126,15 +126,15 @@ Game.prototype.render = function() {
 				graphHeight = 50,
 				graphWidth = 200;
 
-
 			for (var i = 0, e = this.fpsCounter.length; i < e; i++) {
 				c.moveTo(graphLeft + i * 2 + 0.5, graphBottom);
 				c.lineTo(graphLeft + i * 2 + 0.5, graphBottom + this.fpsCounter[i]);
 				c.stroke();
 			}
-		};
+		}
 
 		// FPS counter (text)
+		c.fillStyle = "white";
 		var fps = this.fpsCounter.reduce(function(a, b) { return a ? (a + b) : b }) / this.fpsCounter.length;
 		c.fillText((1000/fps).toLocaleString(), 10, 20);
 
@@ -145,23 +145,36 @@ Game.prototype.render = function() {
 		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
-		for(var i=0,d;d=this.root.cells[i];i++){
+		for (var i = 0, d; d = this.root.cells[i]; i++) {
 			// Fetch color settings and size of circle
 			c.fillStyle = d.color;
-			var size = Math.sqrt(d.size);
+			//var size = Math.sqrt(d.size);
+			var size = 1 + Math.log(d.size);
 
-			// Draw a filled circle to represent each particle
-			c.beginPath();
-			c.arc(d.x, d.y, size, 0,Math.PI*2, false);
-			c.closePath();
-			c.fill();
-			// Draw rectangle
-			//c.fillRect(d.x-size/2, d.y-size/2, size, size);
+			c.fillRect(d.x-size/2, d.y-size/2, size, size);
 		}
+};
+
+Game.prototype.step = function(timestamp) {
+	var now = +new Date;
+	var diff = (now - this.lastStepRTC);
+
+	this.runtime += diff;
+
+	this.render();
+
+	this.steps = 0;
+	while ( this.timer < (this.runtime - this.stepAccuracy) ) {
+		this.tick(this.stepAccuracy);
+		this.timer += this.stepAccuracy;
+		this.steps++;
+	}
+
+	this.lastStepRTC = +new Date;
+	this.fpsIndex = ++this.fpsIndex % 100;
+	this.fpsCounter[this.fpsIndex] = (this.lastStepRTC - now);
+	return this.requestAnimationFrame(this.step);
 }
-
-
-
 
 Game.prototype.toggleRun = function() {
 		if( this.state.running == 1){
@@ -173,41 +186,29 @@ Game.prototype.toggleRun = function() {
 				this.resume();
 			}
 		}
-	}
+}
 
-Game.prototype.start = function(){
+Game.prototype.start = function() {
 		console.log('Starting simulation');
+
 		this.animStart = +new Date;
 		this.lastStepRTC = this.animStart;
 		this.state.running = 1;
-		this.animFrame = requestAnimationFrame(this.step);
+		//var self = this;
+		//this.animFrame = requestAnimationFrame( function(){ self.step() } );
+		this.requestAnimationFrame();
 		//console.log(this.animStart);
 }
-Game.prototype.pause = function(){
+Game.prototype.pause = function() {
 		this.state.running = 0;
 		cancelAnimationFrame(this.animFrame);
 }
-Game.prototype.resume = function(){
+Game.prototype.resume = function() {
 		this.state.running = 1;
-		this.animFrame = requestAnimationFrame(this.step);
+		this.animFrame = this.requestAnimationFrame(this.step);
 }
-Game.prototype.step = function(timestamp){
-		var now = +new Date;
-		var diff = (now - this.lastStepRTC);
-
-		this.runtime += diff;
-
-		this.render();
-
-		this.steps=0;
-		while( this.timer < (this.runtime - this.stepAccuracy) ){
-			this.tick(this.stepAccuracy);
-			this.timer += this.stepAccuracy;
-			this.steps++;
-		}
-
-		this.lastStepRTC = +new Date;
-		this.fpsIndex = ++this.fpsIndex%100;
-		this.fpsCounter[this.fpsIndex] = (this.lastStepRTC - now);
-		return requestAnimationFrame(this.step);
+Game.prototype.requestAnimationFrame = function(t) {
+	var self = this;
+	this.animFrame = requestAnimationFrame( function(){ self.step(t) } );
+	return this.animFrame;
 }
