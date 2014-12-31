@@ -129,7 +129,7 @@ function Readycheck(){
 				return false;
 			}
 		}
-		console.log("Readycheck GO!");
+		console.log("Ready, check, GO!");
 		return true;
 	};
 })();
