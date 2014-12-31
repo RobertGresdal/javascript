@@ -26,7 +26,7 @@ Topology.prototype.render = function(ctx) {
 			}
 		}
 		if (this.options.showNodes) {
-			ctx.strokeStyle = "#080808";
+			ctx.strokeStyle = "#222";
 			ctx.lineWidth = 1;
 			drawNode(this.quadTree.root);
 		}
@@ -57,10 +57,17 @@ Topology.prototype.init = function() {
 	// TODO: Use QuadTree, but add an option to use kdTree later
 	//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 	var pointQuad = true,
-		maxDepth = 32,
+		maxDepth = 64,
 		maxChildren = 4;
 	this.quadTree = new QuadTree(this.bounds, pointQuad, maxDepth, maxChildren);
 
+}
+Topology.prototype.tick = function(t) {
+	for (i=0, end=this.size; i < end; i++) {
+		// TODO: use the class method to draw, but call it as a static method
+		// with the parameters required.
+		this.items[i].tick(t);
+	}
 }
 Topology.prototype.update = function() {
 	// Update the QuadTree

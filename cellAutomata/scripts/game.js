@@ -97,12 +97,11 @@ Game.prototype.tick = function(t) {
 		//timer.calleach(1000,function(){console.log(Math.random(5))});
 		var self = this;
 
-		if (this.mouseButton[0]){
-			var x = self.mouse.x,
-				y = self.mouse.y;
-			this.topo.add( new Particle(x,y) );
+		if (this.mouseButton[0] && self.mouse){
+			this.topo.add( new Particle(self.mouse.x,self.mouse.y) );
 		}
-		//topo.update();
+		this.topo.tick(t);
+		this.topo.update();
 };
 
 	/**
@@ -115,9 +114,8 @@ Game.prototype.render = function() {
 		c.fillStyle = "#111";
 		c.fillRect(0, 0, this.width, this.height);
 
-		c.fillStyle = "green";
 		this.topo.render(c);
-		if(this.mouse)c.fillRect(this.mouse.x-10, this.mouse.y, 20, 20);
+		//if(this.mouse)c.strokeRect(this.mouse.x-10, this.mouse.y, 20, 20);
 
 		c.fillStyle = "black";
 		c.font = "9pt DejaVu Sans";

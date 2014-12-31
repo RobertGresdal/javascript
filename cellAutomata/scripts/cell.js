@@ -1,5 +1,7 @@
 function Cell() {
 	this._property = {};
+	this.x = 0;
+	this.y = 0;
 	/*// Experimental getter and setter didn't work in Opera 26
 	this._properties = {
 		get [variable](){
@@ -28,18 +30,17 @@ Particle.prototype.constructor = Cell;	// Otherwise instances of Particle would 
 function Particle(x, y) {
 	this.x = x;
 	this.y = y;
+	this.dx = Math.random()-0.5;
+	this.dy = Math.random()-0.5;
 }
-Particle.prototype.tick = function(other) {
+Particle.prototype.tick = function(t, other) {
 	// call _rules on _properties
 	// TODO: this is just temporary
-	//this.x *= 1.1 % 1;
-	//this.y *= 1.1 % 1;
-
-	return output;
+	this.x += this.dx * t;
+	this.y += this.dy * t;
 }
 Particle.prototype.render = function(ctx) {
-	ctx.fillStyle = "#888888";
-	ctx.fillRect(this.x, this.y, 2, 2);
+	ctx.fillRect(this.x-1, this.y-1, 2, 2);
 }
 
 Branch.prototype = new Cell();
