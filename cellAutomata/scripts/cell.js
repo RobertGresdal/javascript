@@ -33,11 +33,16 @@ function Particle(x, y) {
 	this.dx = Math.random()-0.5;
 	this.dy = Math.random()-0.5;
 }
-Particle.prototype.tick = function(t, other) {
+Particle.prototype.tick = function(t) {
 	// call _rules on _properties
 	// TODO: this is just temporary
 	this.x += this.dx * t;
 	this.y += this.dy * t;
+}
+Particle.prototype.withinBounds = function(bounds) {
+	if( this.x < bounds.x || this.x > (bounds.x+bounds.width) ) return true;
+	if( this.y < bounds.y || this.y > (bounds.y+bounds.height) ) return true;
+	return false;
 }
 Particle.prototype.render = function(ctx) {
 	ctx.fillRect(this.x-1, this.y-1, 2, 2);

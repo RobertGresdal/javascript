@@ -63,11 +63,26 @@ Topology.prototype.init = function() {
 
 }
 Topology.prototype.tick = function(t) {
+	var prune = [], self=this;
 	for (i=0, end=this.size; i < end; i++) {
 		// TODO: use the class method to draw, but call it as a static method
 		// with the parameters required.
 		this.items[i].tick(t);
 	}
+	//var callback = function(i,v){ return i.withinBounds(self.bounds) };
+	//if( this.size > 0 ) this.items.filter( callback );// remove from items
+}
+// Remove all items outside the bounds of the quadtree
+Topology.prototype.prune = function() {
+	// Check wether to perform pruning or not. Right now, always preform pruning on update
+	//if (to do prune)
+	//if (this.size > 100) {
+	console.log(this.items);
+	this.items = this.quadTree.retrieve({x:0,y:0});
+	this.size = this.items.length;
+	this.update();
+	console.log(this.items);
+	//}
 }
 Topology.prototype.update = function() {
 	// Update the QuadTree

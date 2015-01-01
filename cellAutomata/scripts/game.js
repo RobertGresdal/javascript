@@ -101,6 +101,7 @@ Game.prototype.tick = function(t) {
 			this.topo.add( new Particle(self.mouse.x,self.mouse.y) );
 		}
 		this.topo.tick(t);
+		//this.topo.prune();
 		this.topo.update();
 };
 
