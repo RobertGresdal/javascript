@@ -5,6 +5,7 @@ function Topology(x, y, width, height) {
 	this.items = [];
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
+	this.vfield = null;
 	this.options = { "showNodes":true };
 	this.init();
 }
@@ -30,6 +31,9 @@ Topology.prototype.render = function(ctx) {
 			ctx.lineWidth = 1;
 			drawNode(this.quadTree.root);
 		}
+
+		// Show the vector field
+		this.vfield.render(ctx);
 
 		// Draw all the items on screen
 		ctx.fillStyle = "#888888";
@@ -60,7 +64,7 @@ Topology.prototype.init = function() {
 		maxDepth = 64,
 		maxChildren = 4;
 	this.quadTree = new QuadTree(this.bounds, pointQuad, maxDepth, maxChildren);
-
+	this.vfield = new VField(this);
 }
 Topology.prototype.tick = function(t) {
 	var prune = [], self=this;
@@ -77,12 +81,25 @@ Topology.prototype.prune = function() {
 	// Check wether to perform pruning or not. Right now, always preform pruning on update
 	//if (to do prune)
 	//if (this.size > 100) {
-	console.log(this.items);
+	/*console.log(this.items);
 	this.items = this.quadTree.retrieve({x:0,y:0});
 	this.size = this.items.length;
 	this.update();
 	console.log(this.items);
+	*/
 	//}
+	var left = this.bounds.x,
+		right = this.bounds.x + this.bounds.width,
+		top = this.bounds.y + this.bounds.height,
+		botton = this.bounds.y,
+		i;
+	for (i = this.size; i-- >= 0; ) {
+		if ( this.items[i].x < left)   { this.items.splice(i, 1); } else
+		if ( this.items[i].x > right)  { this.items.splice(i, 1); } else
+		if ( this.items[i].y < bottom) { this.items.splice(i, 1); } else
+		if ( this.items[i].y > top)    { this.items.splice(i, 1); }
+	}
+	this.size = this.items.length;
 }
 Topology.prototype.update = function() {
 	// Update the QuadTree
