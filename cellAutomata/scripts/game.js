@@ -112,8 +112,11 @@ Game.prototype.tick = function(t) {
 	*/
 Game.prototype.render = function() {
 		var c = this.context;
-		c.fillStyle = "#111";
+		//c.fillStyle = "rgba(0,0,0, .05)";
+		c.fillStyle = "rgb(10,10,10)";
 		c.fillRect(0, 0, this.width, this.height);
+		c.fillStyle = "rgb(0,0,0)";
+		c.fillRect(0, 0, 150, 80);
 
 		this.topo.render(c);
 		//if(this.mouse)c.strokeRect(this.mouse.x-10, this.mouse.y, 20, 20);

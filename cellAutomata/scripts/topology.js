@@ -36,7 +36,7 @@ Topology.prototype.render = function(ctx) {
 		this.vfield.render(ctx);
 
 		// Draw all the items on screen
-		ctx.fillStyle = "#888888";
+		ctx.fillStyle = "rgb(255, 255, 255)";
 		for (i=0, end=this.size; i < end; i++) {
 			// TODO: use the class method to draw, but call it as a static method
 			// with the parameters required.
@@ -91,14 +91,16 @@ Topology.prototype.prune = function() {
 	var left = this.bounds.x,
 		right = this.bounds.x + this.bounds.width,
 		top = this.bounds.y + this.bounds.height,
-		botton = this.bounds.y,
+		bottom = this.bounds.y,
+		newItems = this.items;
 		i;
-	for (i = this.size; i-- >= 0; ) {
-		if ( this.items[i].x < left)   { this.items.splice(i, 1); } else
-		if ( this.items[i].x > right)  { this.items.splice(i, 1); } else
-		if ( this.items[i].y < bottom) { this.items.splice(i, 1); } else
-		if ( this.items[i].y > top)    { this.items.splice(i, 1); }
+	for (i = this.size; --i >= 0; ) {
+		if ( this.items[i].x < left)   { newItems.splice(i, 1); } else
+		if ( this.items[i].x > right)  { newItems.splice(i, 1); } else
+		if ( this.items[i].y < bottom) { newItems.splice(i, 1); } else
+		if ( this.items[i].y > top)    { newItems.splice(i, 1); }
 	}
+	this.items = newItems;
 	this.size = this.items.length;
 }
 Topology.prototype.update = function() {
