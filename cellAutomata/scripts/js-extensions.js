@@ -16,9 +16,22 @@ Array.prototype.unique = function() {
 		return self.indexOf(value) === index;
 	} );
 };
-Math.prototype.zero = function() {
+/*
+Math.prototype.sign = function(d) {
+	return d<0 ? -1 : 1;
+};
+Math.prototype.zero = function(d) {
   return 0;
+};
+*/
+Array.prototype.fill = function( val ) {
+  var len = this.length, i;
+  for( i = 0; i < len; i++){
+    this[i] = val;
+  }
+  return this;
 }
-Math.prototype.sign = function(a) {
-	return a<0 ? -1 : 1;
-}
+
+Number.prototype.clamp = function(min, max) {
+  return Math.min(Math.max(this, min), max);
+};

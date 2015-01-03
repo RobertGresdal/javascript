@@ -3,7 +3,7 @@
 function Game() {
 	this.context = null;
 	this.width = document.body.clientWidth - 400;
-	this.height = document.body.clientHeight - 80;
+	this.height = document.body.clientHeight - 10;
 	this.timer = 0;
 	this.runtime = 0;
 	this.debug = 1;
@@ -31,15 +31,15 @@ function Game() {
 	/** Holds mouse position over the canvas */
 	this.mouse = null;
 	this.mouseButton = null;
-	this.root = {
+	/*this.root = {
 		cells: [],
 		cellsLastTick: [],
 		numCells: 0
-	};
+	};*/
 	this.state = { running:0 };
-	this.gameflags = {
+	/*this.gameflags = {
 		DUMMY: 1,
-	};
+	};*/
 	this.settings = { numOfCells:500, showFPSGraph:true };
 	this.topo = new Topology(0, 0, this.width, this.height);
 }
@@ -53,10 +53,12 @@ Game.prototype.init = function() {
 		canvas.width = this.width;
 		canvas.height = this.height;
 		this.context = canvas.getContext("2d");
+		this.context.strokeStyle = "white";
+		this.context.fillStyle = "black";
 
 		window.addEventListener("resize", function(e) {
 			this.width = document.body.clientWidth - 400;
-			this.height = document.body.clientHeight - 80;
+			this.height = document.body.clientHeight - 10;
 			canvas.width = this.width;
 			canvas.height = this.height;
 			game.topo.update();
@@ -102,7 +104,6 @@ Game.prototype.tick = function(t) {
 		}
 		this.topo.tick(t);
 		//this.topo.prune();
-		this.topo.update();
 };
 
 	/**
@@ -126,20 +127,25 @@ Game.prototype.render = function() {
 
 		// FPS Graph
 		if ( this.settings.showFPSGraph ) {
+			c.save();
 			c.strokeStyle = "white";
 			c.lineWidth = 1;
-			c.fillStyle = "red";
+			c.fillStyle = "#113";
 			var graphLeft = (this.width - 205),
 				graphTop = 5,
 				graphBottom = 10,
 				graphHeight = 50,
 				graphWidth = 200;
 
-			for (var i = 0, e = this.fpsCounter.length; i < e; i++) {
+			c.fillRect(graphLeft, graphTop, graphWidth, graphHeight);
+			for (var i = 0, len = this.fpsCounter.length; i < len; i++) {
 				c.moveTo(graphLeft + i * 2 + 0.5, graphBottom);
 				c.lineTo(graphLeft + i * 2 + 0.5, graphBottom + this.fpsCounter[i]);
 				c.stroke();
 			}
+			c.strokeRect(graphLeft, graphTop, graphWidth, graphHeight);
+
+			c.restore();
 		}
 
 		// FPS counter (text)

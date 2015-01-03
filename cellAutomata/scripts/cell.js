@@ -20,6 +20,20 @@ Cell.prototype.toString = function() {
 // ```other``` contains other cells closeby
 Cell.prototype.tick = function() {}
 
+Cell.prototype.distance = function(coords, squared) {
+	var x, y, dist2;
+
+	x = coords.x - this.x;
+	y = coords.y - this.y;
+	dist2 = (x * x) + (y * y);
+
+	if( squared ){
+		return dist2;
+	} else {
+		return Math.sqrt(dist2);
+	}
+}
+
 Cell.prototype.render = function(ctx){
 	//console.assert(typeof ctx === "CanvasRenderingContext2D", "Invalid argument given, expected 'CanvasRenderingContext2D'", ctx);
 	Console.error("wrong render function called");
@@ -40,9 +54,9 @@ Particle.prototype.tick = function(t) {
 	this.y += this.dy * t;
 }
 Particle.prototype.withinBounds = function(bounds) {
-	if( this.x < bounds.x || this.x > (bounds.x+bounds.width) ) return true;
-	if( this.y < bounds.y || this.y > (bounds.y+bounds.height) ) return true;
-	return false;
+	if( this.x < bounds.x || this.x > (bounds.x+bounds.width) ) return false;
+	if( this.y < bounds.y || this.y > (bounds.y+bounds.height) ) return false;
+	return true;
 }
 Particle.prototype.render = function(ctx) {
 	ctx.fillRect(this.x-1, this.y-1, 2, 2);

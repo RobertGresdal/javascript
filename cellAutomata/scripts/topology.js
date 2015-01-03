@@ -3,6 +3,8 @@
 */
 function Topology(x, y, width, height) {
 	this.items = [];
+//this.prune = [];
+	this.size = 0;
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
 	this.vfield = null;
@@ -11,7 +13,6 @@ function Topology(x, y, width, height) {
 }
 
 Topology.prototype.render = function(ctx) {
-	// TODO: display tree quadrons
 	function drawNode(node) {
 		var cn = null, i = 0, bounds = null;
 		for (i = 0; i < 4; i++) {
@@ -67,7 +68,8 @@ Topology.prototype.init = function() {
 	this.vfield = new VField(this);
 }
 Topology.prototype.tick = function(t) {
-	var prune = [], self=this;
+	//var prune = [], self=this;
+	var self=this;
 	for (i=0, end=this.size; i < end; i++) {
 		// TODO: use the class method to draw, but call it as a static method
 		// with the parameters required.
@@ -75,6 +77,10 @@ Topology.prototype.tick = function(t) {
 	}
 	//var callback = function(i,v){ return i.withinBounds(self.bounds) };
 	//if( this.size > 0 ) this.items.filter( callback );// remove from items
+
+	this.update();
+	this.prune();
+	this.vfield.tick(t);
 }
 // Remove all items outside the bounds of the quadtree
 Topology.prototype.prune = function() {
@@ -88,10 +94,10 @@ Topology.prototype.prune = function() {
 	console.log(this.items);
 	*/
 	//}
-	var left = this.bounds.x,
-		right = this.bounds.x + this.bounds.width,
-		top = this.bounds.y + this.bounds.height,
-		bottom = this.bounds.y,
+	var left = this.bounds.x - 500,
+		right = this.bounds.x + this.bounds.width + 500,
+		top = this.bounds.y + this.bounds.height + 500,
+		bottom = this.bounds.y - 500,
 		newItems = this.items;
 		i;
 	for (i = this.size; --i >= 0; ) {
@@ -102,6 +108,10 @@ Topology.prototype.prune = function() {
 	}
 	this.items = newItems;
 	this.size = this.items.length;
+
+	// TODO: get all children not in the root, then take them away from the total
+	// list, leaving you with all the edge cases. no more checking items well
+	// inside the boundary
 }
 Topology.prototype.update = function() {
 	// Update the QuadTree
@@ -115,4 +125,13 @@ Topology.prototype.update = function() {
 }
 Topology.prototype.insert = function(item) {
 	this.quadTree.insert(item);
+}
+
+Topology.prototype.find = function(bounds) {
+	if( this.quadTree ){
+		return this.quadTree.retrieve(bounds);
+	} else {
+		console.error("No quadtree found!",this)
+		return [];
+	}
 }
