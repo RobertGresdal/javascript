@@ -46,7 +46,7 @@ Cell.prototype.distance = function(item, squared) {
 
 Cell.prototype.render = function(ctx){
 	//console.assert(typeof ctx === "CanvasRenderingContext2D", "Invalid argument given, expected 'CanvasRenderingContext2D'", ctx);
-	Console.error("wrong render function called");
+	console.error("wrong render function called");
 }
 
 Particle.prototype = new Cell();			// Inherit Cell
@@ -55,8 +55,8 @@ function Particle(x, y, mass, vx, vy) {
 	this.x = x;
 	this.y = y;
 	this.mass = mass ? mass : Math.random()*60000 + 30000;
-	this.vx = vx ? vx : (Math.random()-0.5) * .2;
-	this.vy = vy ? vy : (Math.random()-0.5) * .2;
+	this.vx = vx ? vx : (Math.random()-0.5);
+	this.vy = vy ? vy : (Math.random()-0.5);
 	this._lastAppliedForce = {};
 	this._forces = [];
 
@@ -90,6 +90,9 @@ Particle.prototype.applyForce = function(t) {
 	t = 1; // TODO: reduce t the closer v is to c?  c^2=sqtr(v^2+t^2)?
 	// Huh, that means mass means nothing when considering how difficult it
 	// is to get close to c. Interesting.
+	//var v_sq = this.vx*this.vx + this.vy*this.vy;
+	//t = Math.sqrt(10/v_sq);
+
 	var Fx = 0, Fy = 0, f, i, len = this._forces.length, deg;
 	var ax,ay,vx,vy;
 

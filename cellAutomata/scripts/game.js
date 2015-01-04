@@ -43,7 +43,8 @@ function Game() {
 		DUMMY: 1,
 	};*/
 	this.settings = { numOfCells:500, showFPSGraph:false, showNodes:false };
-	this.topo = new Topology(0, 0, this.width, this.height);
+	//this.topo = new Topology(0, 0, this.width, this.height);
+	this.topo = new TopologyMaster(0, 0, this.width, this.height);
 	this.topo.options.showNodes = this.settings.showNodes;
 
 	this.init();

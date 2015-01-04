@@ -6,7 +6,7 @@ function VField(topology) {
   //this.width = 100;
   //this.height = 100;
   this.topo = topology;
-  this.zoom = 15;
+  this.zoom = 30;
   this.options = {"showVField":true};
   this.grid = {
     "x":Math.floor(this.topo.bounds.width/this.zoom),

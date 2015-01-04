@@ -1,18 +1,27 @@
 /**
-* Lays items out on a 2D surface
+* Generates workers to perform its job as Topology does, but threaded.
 */
-function Topology(x, y, width, height) {
+function TopologyMaster(x, y, width, height) {
+	this.wCells = new Worker("scripts/workerCells.js")
+	this.wCells.owner = this;
+	this.wResult = {"items":[], "updated":false};
 	this.items = [];
-//this.prune = [];
 	this.size = 0;
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
 	this.vfield = new VField(this);
 	this.options = { "showNodes":true };
+	this.wCells.onmessage = this.workerMessage;
 	this.init();
 }
 
-Topology.prototype.render = function(ctx) {
+TopologyMaster.prototype.workerMessage = function(e){
+	//console.log("message",e.data.items[0]);
+	e.target.owner.wResult.items = e.data.items;
+	e.target.owner.wResult.updated = true;
+}
+
+TopologyMaster.prototype.render = function(ctx) {
 	function drawNode(node) {
 		var cn = null, i = 0, bounds = null;
 		for (i = 0; i < 4; i++) {
@@ -20,32 +29,32 @@ Topology.prototype.render = function(ctx) {
 			if (cn) {
 				drawNode(cn)
 			}	else {
-					bounds = node._bounds;
-					ctx.beginPath();
-					ctx.rect(bounds.x, bounds.y, bounds.width, bounds.height);
-					ctx.stroke();
-				}
+				bounds = node._bounds;
+				ctx.beginPath();
+				ctx.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+				ctx.stroke();
 			}
 		}
-		if (this.options.showNodes) {
-			ctx.strokeStyle = "#222";
-			ctx.lineWidth = 1;
-			drawNode(this.quadTree.root);
-		}
+	}
+	if (this.options.showNodes) {
+		ctx.strokeStyle = "#222";
+		ctx.lineWidth = 1;
+		drawNode(this.quadTree.root);
+	}
 
-		// Show the vector field
-		this.vfield.render(ctx);
+	// Show the vector field
+	this.vfield.render(ctx);
 
-		// Draw all the items on screen
-		ctx.fillStyle = "rgb(255, 255, 255)";
-		for (i=0, end=this.size; i < end; i++) {
-			// TODO: use the class method to draw, but call it as a static method
-			// with the parameters required.
-			this.items[i].render(ctx);
-		}
+	// Draw all the items on screen
+	ctx.fillStyle = "rgb(255, 255, 255)";
+	for (i=0, end=this.size; i < end; i++) {
+		// TODO: use the class method to draw, but call it as a static method
+		// with the parameters required.
+		this.items[i].render(ctx);
+	}
 }
 
-Topology.prototype.add = function(item) {
+TopologyMaster.prototype.add = function(item) {
 	this.items.push(item);
 	this.size = this.items.length;
 }
@@ -54,11 +63,11 @@ Topology.prototype.add = function(item) {
 * Translates values from a property into something that can be rendered,
 * usually as x, y and color space.
 */
-Topology.prototype.translate = function() {
+TopologyMaster.prototype.translate = function() {
 	// TODO: map to bounds, support zooming etc?
 }
 
-Topology.prototype.init = function() {
+TopologyMaster.prototype.init = function() {
 	// TODO: Use QuadTree, but add an option to use kdTree later
 	//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
 	var pointQuad = false,
@@ -67,23 +76,38 @@ Topology.prototype.init = function() {
 	this.quadTree = new QuadTree(this.bounds, pointQuad, maxDepth, maxChildren);
 	//this.vfield = new VField(this);
 }
-Topology.prototype.tick = function(t) {
+TopologyMaster.prototype.tick = function(t) {
 	//var prune = [], self=this;
 	var self=this;
-	for (i=0, end=this.size; i < end; i++) {
-		// TODO: use the class method to draw, but call it as a static method
-		// with the parameters required.
-		this.items[i].tick(t);
+
+	//this.items = [];
+	//this.size = 0;
+	if(this.wResult.updated){
+		for (i=0, end=this.size; i < end; i++) {
+			// TODO: use the class method to draw, but call it as a static method
+			// with the parameters required.
+			//this.items[i].tick(t);
+			// TODO: set items.length = wResult.items[i] , then remove this.prune call below
+			//this.add( new Particle(this.wResult.items[i]) );
+			this.items[i].merge( this.wResult.items[i] );
+		}
+		this.wResult.updated = false;
+	} else {
+		//console.log("Lagging behind")
 	}
 	//var callback = function(i,v){ return i.withinBounds(self.bounds) };
 	//if( this.size > 0 ) this.items.filter( callback );// remove from items
 	this.update();
 	this.vfield.resolve(this);
-	this.vfield.vectorGravity(this);
+	//this.vfield.vectorGravity(this);
 	this.prune();
+
+	// Now que updating the information again
+	//console.log(this.items);
+	this.wCells.postMessage({"items":this.items});
 }
 // Remove all items outside the bounds of the quadtree
-Topology.prototype.prune = function() {
+TopologyMaster.prototype.prune = function() {
 	// Check wether to perform pruning or not. Right now, always preform pruning on update
 	//if (to do prune)
 	//if (this.size > 100) {
@@ -113,7 +137,7 @@ Topology.prototype.prune = function() {
 	// list, leaving you with all the edge cases. no more checking items well
 	// inside the boundary
 }
-Topology.prototype.update = function() {
+TopologyMaster.prototype.update = function() {
 	// Update the QuadTree
 	this.quadTree.clear();
 	this.quadTree.insert(this.items);
@@ -123,11 +147,11 @@ Topology.prototype.update = function() {
 	self.quadTree.retrieve({x:self.mouse.x,y:self.mouse.y,height:100,width:100});
 	var diff = self.root.lastdots.diff(nearest);*/
 }
-Topology.prototype.insert = function(item) {
+TopologyMaster.prototype.insert = function(item) {
 	this.quadTree.insert(item);
 }
 
-Topology.prototype.find = function(bounds) {
+TopologyMaster.prototype.find = function(bounds) {
 	if( this.quadTree ){
 		return this.quadTree.retrieve(bounds);
 	} else {
