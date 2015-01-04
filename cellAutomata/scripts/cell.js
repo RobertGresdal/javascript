@@ -87,7 +87,9 @@ Particle.prototype.addForce = function(pos, F) {
 }
 
 Particle.prototype.applyForce = function(t) {
-	t = 1;
+	t = 1; // TODO: reduce t the closer v is to c?  c^2=sqtr(v^2+t^2)?
+	// Huh, that means mass means nothing when considering how difficult it
+	// is to get close to c. Interesting.
 	var Fx = 0, Fy = 0, f, i, len = this._forces.length, deg;
 	var ax,ay,vx,vy;
 
