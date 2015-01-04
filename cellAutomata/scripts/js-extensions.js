@@ -35,3 +35,13 @@ Array.prototype.fill = function( val ) {
 Number.prototype.clamp = function(min, max) {
   return Math.min(Math.max(this, min), max);
 };
+
+/*
+* DO NOT mess with Object prototype. Rather extend the first class
+* you need it in, like Cell in my instance.
+*
+Object.prototype.merge = function(obj2) {
+  for (var attrname in obj2) { this[attrname] = obj2[attrname]; }
+  return this;
+}
+*/

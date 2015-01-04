@@ -7,7 +7,7 @@ function Topology(x, y, width, height) {
 	this.size = 0;
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
-	this.vfield = null;
+	this.vfield = new VField(this);
 	this.options = { "showNodes":true };
 	this.init();
 }
@@ -61,11 +61,11 @@ Topology.prototype.translate = function() {
 Topology.prototype.init = function() {
 	// TODO: Use QuadTree, but add an option to use kdTree later
 	//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
-	var pointQuad = true,
+	var pointQuad = false,
 		maxDepth = 64,
 		maxChildren = 4;
 	this.quadTree = new QuadTree(this.bounds, pointQuad, maxDepth, maxChildren);
-	this.vfield = new VField(this);
+	//this.vfield = new VField(this);
 }
 Topology.prototype.tick = function(t) {
 	//var prune = [], self=this;
@@ -77,10 +77,10 @@ Topology.prototype.tick = function(t) {
 	}
 	//var callback = function(i,v){ return i.withinBounds(self.bounds) };
 	//if( this.size > 0 ) this.items.filter( callback );// remove from items
-
 	this.update();
+	this.vfield.resolve(this);
+	this.vfield.vectorGravity(this);
 	this.prune();
-	this.vfield.tick(t);
 }
 // Remove all items outside the bounds of the quadtree
 Topology.prototype.prune = function() {

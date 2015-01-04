@@ -1,6 +1,8 @@
 "use strict";
 
 function Game() {
+	//this.w_topology = new Worker("worker.js");
+	//this.workerVField = new Worker("workerVField.js");
 	this.context = null;
 	this.width = document.body.clientWidth - 400;
 	this.height = document.body.clientHeight - 10;
@@ -40,8 +42,11 @@ function Game() {
 	/*this.gameflags = {
 		DUMMY: 1,
 	};*/
-	this.settings = { numOfCells:500, showFPSGraph:true };
+	this.settings = { numOfCells:500, showFPSGraph:false, showNodes:false };
 	this.topo = new Topology(0, 0, this.width, this.height);
+	this.topo.options.showNodes = this.settings.showNodes;
+
+	this.init();
 }
 
 Game.prototype.init = function() {
@@ -100,7 +105,14 @@ Game.prototype.tick = function(t) {
 		var self = this;
 
 		if (this.mouseButton[0] && self.mouse){
-			this.topo.add( new Particle(self.mouse.x,self.mouse.y) );
+			var p = new Particle(self.mouse.x,self.mouse.y),
+				p_i = p.inverse();
+				// FIXME: actually p_i should have -E. Could add for some interesting
+				// effects if I actually annihalate them and let inaccuracies account
+				// for the descrepancy of whichever is left over, but that would
+				// be a project for another time.
+			this.topo.add( p );
+			this.topo.add( p_i );
 		}
 		this.topo.tick(t);
 		//this.topo.prune();

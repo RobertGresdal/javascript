@@ -19,11 +19,12 @@
 				timer = new Timer();
 				game = new Game();
 
-				document.querySelector("#run").addEventListener('click',function(){game.toggleRun()});
-				document.querySelector("#prune").addEventListener('click',function(){game.topo.prune()});
+				document.querySelector("#run").addEventListener('click',function(e){game.toggleRun()});
+				//document.querySelector("#prune").addEventListener('click',function(){game.topo.prune()});
 				document.querySelector("#FPSGraph").addEventListener('change',function(){game.settings.showFPSGraph = this.checked;});
+				document.querySelector("#showNodes").addEventListener('change',function(){game.settings.showNodes = this.checked;});
 
-				game.init();
+				//game.init();
 				game.start();
 			}
 		}
@@ -33,6 +34,9 @@
 	html {
 		background-color: #1b1b1c;
 		color:white;
+	}
+	label {
+		display:block;
 	}
 	#controls {
 		position:absolute;
@@ -46,11 +50,12 @@
 
 <div id="controls">
 	<div class="options">
-		<label><input type="checkbox" id="FPSGraph" checked/> Show FPS Graph</label>
+		<label><input type="checkbox" id="FPSGraph" /> Show FPS Graph</label>
+		<label><input type="checkbox" id="showNodes" /> Show node quads</label>
 	</div>
 	<div>
-		<input type="button" id="run" value="Start"/>
-		<input type="button" id="prune" value="Prune"/>
+		<input type="button" id="run" value="Run / Pause"/>
+		<!--<input type="button" id="prune" value="Prune"/>-->
 	</div>
 </div>
 <canvas id="canvas" width="400" height="300" />
