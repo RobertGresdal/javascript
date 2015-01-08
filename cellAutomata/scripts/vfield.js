@@ -9,10 +9,12 @@ function VField(topology) {
   this.zoom = 30;
   this.options = {"showVField":true};
   this.grid = {
+    "x0":Math.floor(this.topo.bounds.x),
+    "y0":Math.floor(this.topo.bounds.y),
     "x":Math.floor(this.topo.bounds.width/this.zoom),
     "y":Math.floor(this.topo.bounds.height/this.zoom)
   };
-  this.field = null;
+  this.field = [];
   this.clear();
 }
 
@@ -40,31 +42,52 @@ VField.prototype.resolve = function(topology) {
       gx = i * this.zoom;
       gy = j * this.zoom;
       //bounds = {"x":gx-200, "y":gy-200, "width":400, "height":400};
-      bounds = {"x":gx, "y":gy};
+      bounds = {"x":gx, "y":gy, "width":this.zoom, "height":this.zoom};
       items = topology.find(bounds);
-
-      /*items.filter( function(item, i, a){
-        idistance(gx,gy,true) < 50*50 )return true;
-        return false;
-      } );*/
-      //this.field[i][j] = items.length; // TODO: later, open up for varying masses
 
       //items.pos = {"x":gx,"y":gy};
       var init = {"x":gx,"y":gy, "F":0};
       force = items.reduce(this.reduce_strength, init);
       this.field[i][j] = force.F;
-
-      // Add the force on the item
-      /*items.map(function(item, index, array){
-        array[index].addForce(this, this.F);
-      }, init);*/
-      // NO. Each item shall add forces from each 8 nodes around it
     }
   }
   return this;
 }
 
-VField.prototype.vectorGravity = function(topology) {
+VField.prototype.apply = function(topology){
+  var i, j, len = topology.items.length, fLen, forces, item, field_x,field_y;
+
+    //gx = i * this.zoom,
+    //gy = j * this.zoom;
+  for( i = 0; i < len; i++ ){
+    // Add the force on the item
+    //var init = {"x":gx,"y":gy, "F":this.field[i][j]};
+
+    item = topology.items[i],
+    //console.log(topology, topology.items, item);
+    field_pos = {"x": Math.floor(item.x/this.zoom)*this.zoom + this.zoom/2,
+                 "y": Math.floor(item.y/this.zoom)*this.zoom + this.zoom/2};
+    forces = this.getForces(field_pos.x, field_pos.y);
+
+
+
+    //if( forces.length > 0) console.log(forces);
+    fLen = forces.length;
+    for(j=0;j < fLen;j++){
+      item.addForce(field_pos , forces[j]); // middle one
+      //console.log(j, forces[j]);
+    }
+  //  console.log(forces, item);
+    /*item.map(function(item, index, array){
+      array[index].F
+      this.addForce(this, this.F);
+    }, init);*/
+  }
+}
+
+
+
+function apply_v1(topology) {
   // for each item
   //  find closest node
   // add forces from 8 nodes around it
@@ -89,40 +112,48 @@ VField.prototype.vectorGravity = function(topology) {
     }
   }
 }
-/*
-VField.prototype.getForces = function(x, y) {
-  var forces = [], i, j;
-  var top = Math.max(0, y-1),
-    bottom = Math.min(this.grid.y, y+1),
-    left = Math.max(0, x-1),
-    right = Math.min(this.grid.x, x+1);
-  for( i = left; i < right; i++ ){
-    for( j = top; j < bottom; j++){
-      //forces.push(this.field[i][j]);
-      //forces[i][j]
+
+VField.prototype.getForces = function(offsetX, offsetY) {
+  //console.trace(offsetX, offsetY)
+  var ox = Math.floor(offsetX/this.zoom),// + this.zoom/2,
+      oy = Math.floor(offsetY/this.zoom),// + this.zoom/2,
+      x, y,
+      width  = this.field.length,
+      height = this.field[0].length;
+
+  var r2 = 0.70710678118654752440084436210485,
+      i, j,
+      Mf, Mi,
+      m = [-r2,-1, 0,
+            -1, 0, 1,
+             0, 1, r2]; // FIXME: actually I should divide each of these by
+             // 8 as well. If not, the total force will be increased eightfold.
+
+  var forces = [];
+
+  if( ox === NaN || oy === NaN ){
+    debugger;
+    console.log("B, ox,oy,grid: ",ox,oy,this.grid);
+  }
+  //ox = ox.clamp(1, width - 2),
+  //ox = oy.clamp(1, height - 2)
+
+  Mf = m.slice(0);
+  for( i = -1; i <= 1; i++ ){
+    for( j = -1; j <= 1; j++){
+      Mi = 4 + i + j*3; // Translate matrix index from possible values [-4,4], to [0,8].
+      if( this.field[i+ox] && this.field[i+ox][j+oy] ){
+        currentF = this.field[i+ox][j+oy];
+        Mf[Mi] = m[Mi] * currentF;
+      }
+      //currentF = this.field[i+ox][j+oy];
+      //if( currentF !== undefined) Mf[Mi] = m[Mi] * currentF;
+      //forces.push(this.field[i+ox][j+ox]) * m[i+j*3];
     }
   }
-  return forces;
-}*/
 
-/*
-VField.prototype.vectorGravity = function(x, y, strength, time) {
-  // Perform the second pass and change every items speed
-  var i, j;
-  //, k, gx, gy, col, items, len, bounds, strength;
-  for ( i = 0; i < this.grid.x; i++ ){
-    for ( j = 0; j < this.grid.y; j++ ) {
-      gx = i * this.zoom - this.zoom/2;
-      gy = j * this.zoom - this.zoom/2;
-      bounds = {"x":gx-50, "y":gy-50, "width":100, "height":100};
-      items = topology.find(bounds);
-
-      items.map(function(item, index, array){
-        item.applyForce(x, y, this.field[i][j], time);
-      });
-    }
-  }
-}*/
+  return Mf;
+}
 
 /**
 * item must have x,y properties. item2 must have x, y and mass.
@@ -177,7 +208,7 @@ VField.prototype.render = function(ctx) {
         // log of MAX_VALUE is ~< 325
         // Restrict alpha to log(x)==alpha_max_strength
         alpha = (Math.log(x) / alpha_max_strength);
-        size = (x+0).clamp(0,this.zoom*1.5);
+        size = (x+0).clamp(0,this.zoom*1.1);
         alpha.clamp(0,1);
       }
       //if(x > 0)console.log("rgba(0, 255, 0, "+x+")");

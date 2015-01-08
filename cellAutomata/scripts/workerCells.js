@@ -20,11 +20,13 @@ function workOnCells(items, time) {
 		console.trace();
 		debugger;
 	}*/
-	var i, end = items.length, item, p;
+	var i, end = items.length, /*item,*/ p;
 	for (i = 0; i < end; i++) {
 		//try {
-			p = new Particle(items[i].x, items[i].y, items[i].mass, items[i].vx, items[i].vy);
-			p._forces = items[i]._forces;
+		//debugger;
+			p = new Particle();///*items[i].x, items[i].y, items[i].mass, items[i].vx, items[i].vy*/);
+			p.merge(items[i]);
+			//p._forces = items[i]._forces;
 			//p.merge(items[i]);
 			p.tick(time);
 			items[i] = p;
@@ -35,7 +37,8 @@ function workOnCells(items, time) {
 		//	console.log(items[i], items);
 		//	debugger;
 		//}
+		if(p.x === NaN || items[i].x === NaN)debugger;
 	}
-//console.log("after",items[0]);
+  //console.log("cell thread done",items);
 	postMessage({"items":items});
 }

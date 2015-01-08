@@ -106,16 +106,19 @@ Game.prototype.tick = function(t) {
 		var self = this;
 
 		if (this.mouseButton[0] && self.mouse){
-			var p = new Particle(self.mouse.x,self.mouse.y),
-				p_i = p.inverse();
+			var p = new Particle(self.mouse.x,self.mouse.y);//,
+				p.width = this.topo.zoom;
+				p.height = this.topo.zoom;
+				//p_i = p.inverse();
 				// FIXME: actually p_i should have -E. Could add for some interesting
 				// effects if I actually annihalate them and let inaccuracies account
 				// for the descrepancy of whichever is left over, but that would
 				// be a project for another time.
 			this.topo.add( p );
-			this.topo.add( p_i );
+			//this.topo.add( p_i );
 		}
-		this.topo.tick(t);
+		//if( this.topo.ready ) 
+			this.topo.tick(t);
 		//this.topo.prune();
 };
 

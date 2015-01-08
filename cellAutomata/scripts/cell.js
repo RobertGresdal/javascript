@@ -1,5 +1,5 @@
 function Cell(copy) {
-	this._property = {};
+	this.options = {};
 	this.x = 0;
 	this.y = 0;
 	/*// Experimental getter and setter didn't work in Opera 26
@@ -52,6 +52,7 @@ Cell.prototype.render = function(ctx){
 Particle.prototype = new Cell();			// Inherit Cell
 Particle.prototype.constructor = Cell;	// Otherwise instances of Particle would have a constructor of Cell
 function Particle(x, y, mass, vx, vy) {
+	this.options.relativity = true;
 	this.x = x;
 	this.y = y;
 	this.mass = mass ? mass : Math.random()*60000 + 30000;
@@ -61,6 +62,14 @@ function Particle(x, y, mass, vx, vy) {
 	this._forces = [];
 
 	this._drawSize = Math.sqrt(this.mass-30000) / 16;
+}
+Particle.prototype.merge = function(p2){
+	this.x = p2.x;
+	this.y = p2.y;
+	this.mass = p2.mass;
+	this.vx = p2.vx;
+	this.vy = p2.vy;
+	this._forces = p2._forces;
 }
 Particle.prototype.tick = function(t) {
 	// call _rules on _properties
@@ -87,18 +96,28 @@ Particle.prototype.addForce = function(pos, F) {
 }
 
 Particle.prototype.applyForce = function(t) {
+	//debugger;
 	t = 1; // TODO: reduce t the closer v is to c?  c^2=sqtr(v^2+t^2)?
 	// Huh, that means mass means nothing when considering how difficult it
 	// is to get close to c. Interesting.
-	//var v_sq = this.vx*this.vx + this.vy*this.vy;
-	//t = Math.sqrt(10/v_sq);
+	if(this.options.relativity){
+		var v_sq = this.vx*this.vx + this.vy*this.vy;
+		v_sq = Math.max(1, v_sq);
+		t = Math.sqrt(50/v_sq);
+	}
 
 	var Fx = 0, Fy = 0, f, i, len = this._forces.length, deg;
-	var ax,ay,vx,vy;
-
+	var ax,ay,vx,vy,
+			r2 = 0.70710678118654752440084436210485,
+			m = [-r2, -1, 0,
+						-1,  0, 1,
+						 0,  1, r2]
 	for( i = 0; i < len; i++) {
 		f = this._forces[i];
-		c = Math.sqrt(f.vy*f.vy + f.vx*f.vx);
+		//c = Math.sqrt(f.vy*f.vy + f.vx*f.vx);
+		a = m[i]*f.vy - this.vy;
+		b = m[i]*f.vx - this.vx;
+		c = Math.sqrt(a*a + b*b);
 		Fx += f.F * f.vx / c;
 		Fy += f.F * f.vy / c;
 	}
@@ -120,6 +139,7 @@ Particle.prototype.applyForce = function(t) {
 	this.vy = vy;
 	this.ax = ax;
 	this.ay = ay;
+	if( this.x === NaN || this.y === NaN ) debugger;
 }
 /**
  * [Energy–momentum relation](http://en.wikipedia.org/wiki/Energy–momentum_relation)

@@ -2,6 +2,7 @@
 * Generates workers to perform its job as Topology does, but threaded.
 */
 function TopologyMaster(x, y, width, height) {
+	this.ready = true;
 	this.wCells = new Worker("scripts/workerCells.js")
 	this.wCells.owner = this;
 	this.wResult = {"items":[], "updated":false};
@@ -10,15 +11,17 @@ function TopologyMaster(x, y, width, height) {
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
 	this.vfield = new VField(this);
-	this.options = { "showNodes":true };
+	this.options = { "showNodes":true, "pointQuad":false };
 	this.wCells.onmessage = this.workerMessage;
 	this.init();
 }
 
 TopologyMaster.prototype.workerMessage = function(e){
 	//console.log("message",e.data.items[0]);
-	e.target.owner.wResult.items = e.data.items;
-	e.target.owner.wResult.updated = true;
+	//if(e.data.items.length > 0)debugger;
+	game.topo.wResult.items = e.data.items;
+	game.topo.ready = true;
+	//if(game.topo.readyr;
 }
 
 TopologyMaster.prototype.render = function(ctx) {
@@ -70,41 +73,44 @@ TopologyMaster.prototype.translate = function() {
 TopologyMaster.prototype.init = function() {
 	// TODO: Use QuadTree, but add an option to use kdTree later
 	//this.kdTree = new kdTree(this.root.dots, game.distance, ['x','y']);
-	var pointQuad = false,
+	var pointQuad = this.options.pointQuad,
 		maxDepth = 16,
 		maxChildren = 4;
 	this.quadTree = new QuadTree(this.bounds, pointQuad, maxDepth, maxChildren);
 	//this.vfield = new VField(this);
+	this.wCells.postMessage({"items":this.items});
 }
 TopologyMaster.prototype.tick = function(t) {
-	//var prune = [], self=this;
-	var self=this;
+	if(this.ready){
+		this.ready = false;
+		var self=this, end = 0;
 
-	//this.items = [];
-	//this.size = 0;
-	if(this.wResult.updated){
-		for (i=0, end=this.size; i < end; i++) {
+		end = this.wResult.items.length;
+		//if(end > 0)debugger;
+		for (i=0; i < end; i++) {
 			// TODO: use the class method to draw, but call it as a static method
 			// with the parameters required.
-			//this.items[i].tick(t);
+			this.items[i].tick(t);
 			// TODO: set items.length = wResult.items[i] , then remove this.prune call below
 			//this.add( new Particle(this.wResult.items[i]) );
 			this.items[i].merge( this.wResult.items[i] );
 		}
-		this.wResult.updated = false;
-	} else {
-		//console.log("Lagging behind")
-	}
-	//var callback = function(i,v){ return i.withinBounds(self.bounds) };
-	//if( this.size > 0 ) this.items.filter( callback );// remove from items
-	this.update();
-	this.vfield.resolve(this);
-	//this.vfield.vectorGravity(this);
-	this.prune();
 
-	// Now que updating the information again
-	//console.log(this.items);
-	this.wCells.postMessage({"items":this.items});
+		//if(end > 0)debugger;
+		//var callback = function(i,v){ return i.withinBounds(self.bounds) };
+		//if( this.size > 0 ) this.items.filter( callback );// remove from items
+		this.update();
+		this.vfield.resolve(this);
+		this.vfield.apply(this);
+		this.prune();
+
+		// Now que updating the information again
+		//console.log(this.items);
+		//if(this.items.length > 0)debugger;
+		//console.log("Ready to calculate particles: ", this.items);
+		this.wCells.postMessage({"items":this.items});
+	}
+	return this.ready;
 }
 // Remove all items outside the bounds of the quadtree
 TopologyMaster.prototype.prune = function() {
