@@ -10,6 +10,10 @@ function VField(dimensions, topology){
   this.options = {"showField":true};
 
   this._topology = topology;
+
+  /*for(var i=0;i<this.field.length;i++){
+    this.field[i] = {"mass":0};
+  }*/
 }
 
 function VFieldNode(dimension){
@@ -113,31 +117,15 @@ VField.prototype.propagate = function() {
     h = this.dim[1],
     //hasSameY,
     i, j, mi;
-  var m = [-h-1, -h, -h+1,
+  /*var m = [-h-1, -h, -h+1,
              -1,        1,
-            h-1,  h,  h+1];
+            h-1,  h,  h+1];*/
+  var m = [-w, -1];
     //last, next, current;
   //for(i = 0, last = null, next = field[i]; current = next; next = field[++i]){
   // FIXME: don't copy value to right of current index == width-1
   for(i = 0; i < len; i++){
-    /*if(field[i]){
-      if( field[i].mass > 0 ){
-        newField[i].mass = field[i].mass/2;
-      }
-      if( field[i+1] && field[i+1].mass > 0){
-        newField[i] += {"mass":(field[i+1].mass/2)};
-      }
-    }*/
-    /*if( field[i+1] && field[i+1].mass > 0){
-      hasSameY = (Math.floor(i/width) == Math.floor((i+1)/width) );
-      if (hasSameY ){
-        if( ! newField[i] ) newField[i] = {"mass":0};
-        newField[i].mass += (field[i+1].mass / 8);
-        newField[i+1].mass -= (field[i+1].mass / 8);
-      }
-    }*/
     if( field[i] && field[i].mass > 1e-15 ){
-      newField[i].mass = field[i].mass / 2;
       for(j = 0; j < m.length; j++){
         mi = i+m[j];
         if( field[mi] && field[mi].mass > 1e-15 ){
@@ -145,25 +133,9 @@ VField.prototype.propagate = function() {
           newField[mi].mass += field[i].mass / 8; // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
         }
       }
+      newField[i].mass = field[i].mass / 1.2;
     }
   }
-
-  // for each field
-  /*for(i = 0; i < len; i++){
-    // assuming it exists
-    if( field[i] ){
-      newField[i] = {"mass": field[i].mass / 2};
-      // copy part of the "mass" from the surrounding fields
-      for(j = 0; j < m.length; j++){
-        mi = i+m[j];
-        if( field[mi] && field[mi].mass > 1e-15 ){
-          newField[i].mass += (field[mi].mass / 8); // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
-        }
-      }
-    }
-  }*/
-
-  //debugger;
   this.field = newField;
 }
 
