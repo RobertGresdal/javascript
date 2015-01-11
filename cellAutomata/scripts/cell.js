@@ -52,12 +52,12 @@ Cell.prototype.render = function(ctx){
 Particle.prototype = new Cell();			// Inherit Cell
 Particle.prototype.constructor = Cell;	// Otherwise instances of Particle would have a constructor of Cell
 function Particle(x, y, mass, vx, vy) {
-	this.options.relativity = true;
+	this.options.relativity = false;
 	this.x = x;
 	this.y = y;
 	this.mass = mass ? mass : Math.random()*60000 + 30000;
-	this.vx = vx ? vx : (Math.random()-0.5);
-	this.vy = vy ? vy : (Math.random()-0.5);
+	this.vx = vx ? vx : (Math.random()-0.5)*4;
+	this.vy = vy ? vy : (Math.random()-0.5)*4;
 	this._lastAppliedForce = {};
 	this._forces = [];
 
@@ -97,7 +97,7 @@ Particle.prototype.addForce = function(pos, F) {
 
 Particle.prototype.applyForce = function(t) {
 	//debugger;
-	t = 1; // TODO: reduce t the closer v is to c?  c^2=sqtr(v^2+t^2)?
+	t = 1; // TODO: reduce t the closer v is to c?  --c^2--? c=sqtr(v^2+t^2)?
 	// Huh, that means mass means nothing when considering how difficult it
 	// is to get close to c. Interesting.
 	if(this.options.relativity){
@@ -109,16 +109,19 @@ Particle.prototype.applyForce = function(t) {
 	var Fx = 0, Fy = 0, f, i, len = this._forces.length, deg;
 	var ax,ay,vx,vy,
 			r2 = 0.70710678118654752440084436210485,
-			m = [-r2, -1, 0,
+			/*m = [-r2, -1, 0,
 						-1,  0, 1,
-						 0,  1, r2]
+						 0,  1, r2];*/
+			 m = [0, 0, 0,
+						0,  1, 0,
+						0,  0, 0]
 	for( i = 0; i < len; i++) {
 		f = this._forces[i];
 		//c = Math.sqrt(f.vy*f.vy + f.vx*f.vx);
 		a = m[i]*f.vy - this.vy;
 		b = m[i]*f.vx - this.vx;
 		c = Math.sqrt(a*a + b*b);
-		Fx += f.F * f.vx / c;
+		Fx += f.F * f.vx / c; // TODO FIXME: Double check these two, sure we're not getting division by 0-1 here and that's why particles are flying off?
 		Fy += f.F * f.vy / c;
 	}
 	/*deg = f.vector.y / f.vector.x;
@@ -126,7 +129,7 @@ Particle.prototype.applyForce = function(t) {
 	Fy += Math.sin(deg) * F_sq;*/
 	//this._lastAppliedForce = {"Fx":Fx, "Fy":Fy};
 
-	ax = -Fx / this.mass;
+	ax = -Fx / this.mass; // added "mass" to emulate collections of particles
 	ay = -Fy / this.mass;
 
 	vx = this.vx + ax * t ;

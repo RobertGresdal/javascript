@@ -7,12 +7,14 @@
 			check.loadScript([
 					'scripts/js-extensions.js',
 					'scripts/vfield.js',
-					'scripts/topology.js',
+					'scripts/vfieldnode.js',
+					//'scripts/topology.js',
 					'scripts/topologyMaster.js',
 			    'scripts/cell.js',
 			    'scripts/Timer.js',
 					'scripts/QuadTree.js',
-			    'scripts/game.js'
+			    'scripts/game.js',
+					'scripts/selftest.js'
 			], begin, 'scripts');
 
 			function begin(){
@@ -30,6 +32,9 @@
 			}
 		}
 	);
+	</script>
+	<script>
+	(function(document,script,id){var js,r=document.getElementsByTagName(script)[0],protocol=/^http:/.test(document.location)?'http':'https';if(!document.getElementById(id)){js=document.createElement(script);js.id=id;js.src=protocol+'://widgets.changetip.com/public/js/widgets.js';r.parentNode.insertBefore(js,r)}}(document,'script','changetip_w_0'));
 	</script>
 	<style>
 	html {
@@ -50,6 +55,7 @@
 <head>
 
 <div id="controls">
+	<div style="position:absolute;right:0" id="changetip_tipme_button" data-bid="dF7qbeXaVRnhsihBayYBT4" data-uid="FitdLARFU3zQVWgg9cadXg"></div>
 	<div class="options">
 		<label><input type="checkbox" id="FPSGraph" /> Show FPS Graph</label>
 		<label><input type="checkbox" id="showNodes" /> Show node quads</label>

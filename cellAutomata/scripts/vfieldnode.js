@@ -112,29 +112,40 @@ VField.prototype.propagate = function() {
   // do a flawed propagation first, just move directly x and y
   var field = this.field,
     newField = this.field.slice(0),
-    len = field.length,
+    len = (this.dim[0] * this.dim[1]),
     w = this.dim[0],
-    h = this.dim[1],
+    //h = this.dim[1],
     //hasSameY,
     i, j, mi;
-  /*var m = [-h-1, -h, -h+1,
+  var m = [-w-1, -w, -w+1,
              -1,        1,
-            h-1,  h,  h+1];*/
-  var m = [-w, -1];
+            w-1,  w,  w+1];/**/
+  //var m = [-w, -1];
     //last, next, current;
   //for(i = 0, last = null, next = field[i]; current = next; next = field[++i]){
   // FIXME: don't copy value to right of current index == width-1
   for(i = 0; i < len; i++){
+    // If the current field has mass
     if( field[i] && field[i].mass > 1e-15 ){
+      // For each surrounding field
       for(j = 0; j < m.length; j++){
         mi = i+m[j];
-        if( field[mi] && field[mi].mass > 1e-15 ){
-          if(!newField[mi]) newField[mi] = {"mass":0};
-          newField[mi].mass += field[i].mass / 8; // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
+        if(mi < 0)continue;
+        if(mi > len)continue;
+        // If it's not defined, define it
+        if( !field[mi] ) newField[mi] = {"mass":0};
+
+        // Ignore the field if it has insignificant mass
+        if( field[i] && field[i].mass > 1e-15 ){
+          // Propagate some of its mass (should rename this to "pull" or something to indicate what we're propagating is the gravitational pull wave)
+          newField[mi].mass += field[i].mass / 16; // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
         }
       }
-      newField[i].mass = field[i].mass / 1.2;
-    }
+      newField[i].mass = field[i].mass / 4;
+    } /*else {
+      if(newField[i]) newField[i].mass = 0;
+      else newField[i] = {"mass":0};
+    }*/
   }
   this.field = newField;
 }

@@ -75,6 +75,7 @@ Topology.prototype.tick = function(t) {
 		// with the parameters required.
 		this.items[i].tick(t);
 	}
+
 	//var callback = function(i,v){ return i.withinBounds(self.bounds) };
 	//if( this.size > 0 ) this.items.filter( callback );// remove from items
 	this.update();
@@ -134,4 +135,15 @@ Topology.prototype.find = function(bounds) {
 		console.error("No quadtree found!",this)
 		return [];
 	}
+}
+
+Topology.prototype.closestToMouse = function(mouse_pos){
+	var candidates = this.find(mouse_pos);
+	function m_distance(a,b){
+		var ad = a.distance(mouse_pos),
+		 	bd = b.distance(mouse_pos);
+		return bd - ad;
+	};
+	candidates.sort(m_distance);
+	return candidates;
 }

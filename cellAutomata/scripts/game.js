@@ -31,7 +31,7 @@ function Game() {
 	/** Timestamp from when start were called */
 	this.animStart = null;
 	/** Holds mouse position over the canvas */
-	this.mouse = null;
+	this.mouse = {};
 	this.mouseButton = null;
 	/*this.root = {
 		cells: [],
@@ -117,9 +117,11 @@ Game.prototype.tick = function(t) {
 			this.topo.add( p );
 			//this.topo.add( p_i );
 		}
-		//if( this.topo.ready ) 
+		//if( this.topo.ready )
 			this.topo.tick(t);
+
 		//this.topo.prune();
+		//this.mouse.particle = this.topo.closestToMouse(game.mouse);
 };
 
 	/**
@@ -175,6 +177,14 @@ Game.prototype.render = function() {
 		//c.fillText('energy: '+this.energy.toLocaleString(), 10, 80);
 		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
 
+		/*if(this.mouse && this.mouse.particle && this.mouse.particle[0]){
+			var p = this.mouse.particle[0];
+			c.fillText("{ x:" + p.x +  ",  y:" + p.y, 10,100);
+			c.fillText(" vx:" + p.vx + ", vy:" + p.vy, 10,120);
+			c.fillText(" ax:" + p.vx + ", ay:" + p.ay, 10,140);
+			c.fillText(" mass:" + p.mass + " }", 10,160);
+		}*/
+		
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
 		/*for (var i = 0, d; d = this.root.cells[i]; i++) {
 			// Fetch color settings and size of circle

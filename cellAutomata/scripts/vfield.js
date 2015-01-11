@@ -2,7 +2,7 @@
 * Vector field
 * @param {Object|Topology} topology The topology of the items
 */
-function VField(topology) {
+function VField_old1(topology) {
   //this.width = 100;
   //this.height = 100;
   this.topo = topology;
@@ -18,7 +18,7 @@ function VField(topology) {
   this.clear();
 }
 
-VField.prototype.tick = function(t) {
+VField_old1.prototype.tick = function(t) {
   //this.clear();
   //this.spread();
 }
@@ -26,7 +26,7 @@ VField.prototype.tick = function(t) {
 /**
 * Resolve takes a function to smooth out point values
 */
-VField.prototype.resolve = function(topology) {
+VField_old1.prototype.resolve = function(topology) {
   //if ( ! topology.items || topology.items.length == 0 ) return this;
 
   // TODO: use F to calculate force spread from items. currently use simple attraction
@@ -54,7 +54,7 @@ VField.prototype.resolve = function(topology) {
   return this;
 }
 
-VField.prototype.apply = function(topology){
+VField_old1.prototype.apply = function(topology){
   var i, j, len = topology.items.length, fLen, forces, item, field_x,field_y;
 
     //gx = i * this.zoom,
@@ -113,7 +113,7 @@ function apply_v1(topology) {
   }
 }
 
-VField.prototype.getForces = function(offsetX, offsetY) {
+VField_old1.prototype.getForces = function(offsetX, offsetY) {
   //console.trace(offsetX, offsetY)
   var ox = Math.floor(offsetX/this.zoom),// + this.zoom/2,
       oy = Math.floor(offsetY/this.zoom),// + this.zoom/2,
@@ -124,11 +124,13 @@ VField.prototype.getForces = function(offsetX, offsetY) {
   var r2 = 0.70710678118654752440084436210485,
       i, j,
       Mf, Mi,
-      m = [-r2,-1, 0,
-            -1, 0, 1,
-             0, 1, r2]; // FIXME: actually I should divide each of these by
+      m = [r2,1,r2,
+            1, 0, 1,
+             r2, 1, r2]; // FIXME: actually I should divide each of these by
              // 8 as well. If not, the total force will be increased eightfold.
-
+      /*m = [0, 0, 0,
+           0, 1, 0,
+           0, 0, 0];*/
   var forces = [];
 
   if( ox === NaN || oy === NaN ){
@@ -158,13 +160,13 @@ VField.prototype.getForces = function(offsetX, offsetY) {
 /**
 * item must have x,y properties. item2 must have x, y and mass.
 */
-VField.prototype.calcForce = function(item, item2) {
+VField_old1.prototype.calcForce = function(item, item2) {
   var dist_sq, F;
   dist_sq = item.distance(item2,true);
   F = item2.mass * ( 1 / Math.max(1,dist_sq) );
   return F;
 }
-VField.prototype.reduce_strength = function (last, item, i, arr) {
+VField_old1.prototype.reduce_strength = function (last, item, i, arr) {
   var dist_sq, F;
   dist_sq = item.distance(last,true);
   //if( dist_sq > 625 ){
@@ -178,7 +180,7 @@ VField.prototype.reduce_strength = function (last, item, i, arr) {
   return last;
 }
 
-VField.prototype.clear = function() {
+VField_old1.prototype.clear = function() {
   //console.log(this.grid.x);
   this.field = new Array(this.grid.x);
   for (var i = 0, len = this.grid.x; i < len; i++) {
@@ -190,7 +192,7 @@ VField.prototype.clear = function() {
   return this;
 }
 
-VField.prototype.render = function(ctx) {
+VField_old1.prototype.render = function(ctx) {
   var i, j,
     x = 0,
     zoom = this.zoom,
@@ -224,7 +226,7 @@ VField.prototype.render = function(ctx) {
 }
 
 /*
-VField.prototype.insert(item) {
+VField_old1.prototype.insert(item) {
   if( item instanceof Array) {
     var len = item.length;
 

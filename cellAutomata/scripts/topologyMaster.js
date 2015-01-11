@@ -10,7 +10,12 @@ function TopologyMaster(x, y, width, height) {
 	this.size = 0;
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
-	this.vfield = new VField(this);
+	this.vfield = new VField_old1(this);
+	this.vfield_test = new VField(
+		[Math.floor(this.bounds.width/30),
+		 Math.floor(this.bounds.height/30)],
+		this
+	);
 	this.options = { "showNodes":true, "pointQuad":false };
 	this.wCells.onmessage = this.workerMessage;
 	this.init();
@@ -46,7 +51,8 @@ TopologyMaster.prototype.render = function(ctx) {
 	}
 
 	// Show the vector field
-	this.vfield.render(ctx);
+	//this.vfield.render(ctx);
+	this.vfield_test.render(ctx);
 
 	// Draw all the items on screen
 	ctx.fillStyle = "rgb(255, 255, 255)";
@@ -100,8 +106,14 @@ TopologyMaster.prototype.tick = function(t) {
 		//var callback = function(i,v){ return i.withinBounds(self.bounds) };
 		//if( this.size > 0 ) this.items.filter( callback );// remove from items
 		this.update();
-		this.vfield.resolve(this);
-		this.vfield.apply(this);
+
+		//this.vfield.resolve(this);
+		//this.vfield.apply(this);
+
+		this.vfield_test.propagate();
+		this.vfield_test.resolve();
+
+
 		this.prune();
 
 		// Now que updating the information again
@@ -164,4 +176,15 @@ TopologyMaster.prototype.find = function(bounds) {
 		console.error("No quadtree found!",this)
 		return [];
 	}
+}
+
+TopologyMaster.prototype.closestToMouse = function(mouse_pos){
+	var candidates = this.find(mouse_pos);
+	function m_distance(a,b){
+		var ad = a.distance(mouse_pos),
+		bd = b.distance(mouse_pos);
+		return bd - ad;
+	};
+	candidates.sort(m_distance);
+	return candidates;
 }
