@@ -3,8 +3,11 @@
 */
 function VField(dimensions, topology){
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
+  //this.field = [];
   this.field = [];
+  this.field.length = dimensions[0]*dimensions[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
   this.zoom = 30;
+  this.options = {"showField":true};
 
   this._topology = topology;
 }
@@ -31,9 +34,10 @@ VField.prototype.render = function(ctx) {
   pull = 0,
   zoom = this.zoom,
   mid = this.zoom/12,
+  offset,
   size,
   alpha,
-  alpha_max_strength = 50
+  alpha_max_strength = 50,
   dim = this.dim;
 
   ctx.strokeStyle = "#666600";
@@ -42,49 +46,125 @@ VField.prototype.render = function(ctx) {
   var len = this.field.length;
   for( i = 0; i < len; i++ ){
     x = i % dim[0];
-    y = Math.floor( i / dim[1] );
-    pull = this.field[i].magnitude;
+    y = Math.floor( i / dim[0] );
+    pull = this.field[i] ? this.field[i].mass : 0;
 
-    ctx.fillStyle = "yellow";
+    ctx.fillStyle = "rgb(255,255,0,0.5)";
     ctx.fillRect(x*zoom, y*zoom, 1, 1);
 
     if( this.options.showField ){
       alpha = (Math.log(pull) / alpha_max_strength);
-      size = (pull+0).clamp(0,this.zoom*1.1);
+      size = Math.log(pull*pull/10);
+      size.clamp(0,this.zoom*1.1);
       alpha.clamp(0,1);
 
       ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
-      ctx.fillRect(x*zoom-size/2, y*zoom-size/2, size, size);
+      //ctx.fillStyle = "green";
+      offset = (zoom - size)/2;
+      ctx.fillRect(x*zoom+offset, y*zoom+offset, size, size);
     }
   }
 }
 
 VField.prototype.resolve = function() {
-  var cells = this._topology.cells,
+  var cells = this._topology.items,
   len = cells.length,
   flen = this.field.length,
   zoom = this.zoom,
-  cell, i, fx, fy;
+  cell, i, fx, fy, fi;
 
   // Reset field mass
-  for(i = 0; i < flen; i++){
-    this.field[i].mass = 0;
-  }
+  // TODO: this can be done without looping over all indexes, but is it worth
+  // trading the few cpu cycles for the memory to remember which were changed last?
+  /*for(i = 0; i < flen; i++){
+    if( this.field[i] ) this.field[i].mass = 0;
+  }*/
+
   // Recalculate mass for field
+  // For each cell, add its mass to the field
   for(i = 0; i < len; i++){
     cell = cells[i];
+    // Abort early if cells exist outside bounds
+    if( cell.x < 0 || cell.x > this.dim[0]*zoom)continue;
+    if( cell.y < 0 || cell.y > this.dim[1]*zoom)continue;
+
     // Find which field the cell is located in
-    fx = Math.floor( cell.x / zoom );
-    fy = Math.floor( cell.y / zoom );
+    fx = Math.floor( cell.x / zoom );//.clamp(0, this.dim[0]);
+    fy = Math.floor( cell.y / zoom );//.clamp(0, this.dim[1]);
     //force = new Force(fx, fy, cell.mass);
-    this.field[(fx + fy * this.dim[1])].mass += cell.mass;
+    fi = (fx + fy * this.dim[0]);
+    if( 0 <= fi && fi < flen ){
+      // If the mass property doesn't exist, make it
+      if( ! this.field[fi] )this.field[fi] = {"mass":0};
+
+      this.field[fi].mass += cell.mass;
+      // FIXME: ah, wait. we were supposed to add FORCES to the field
+    }
+    //debugger;
   }
 }
 
 VField.prototype.propagate = function() {
   // do a flawed propagation first, just move directly x and y
-  var forces = [],
-    len = this.forces.length;
+  var field = this.field,
+    newField = this.field.slice(0),
+    len = field.length,
+    w = this.dim[0],
+    h = this.dim[1],
+    //hasSameY,
+    i, j, mi;
+  var m = [-h-1, -h, -h+1,
+             -1,        1,
+            h-1,  h,  h+1];
+    //last, next, current;
+  //for(i = 0, last = null, next = field[i]; current = next; next = field[++i]){
+  // FIXME: don't copy value to right of current index == width-1
+  for(i = 0; i < len; i++){
+    /*if(field[i]){
+      if( field[i].mass > 0 ){
+        newField[i].mass = field[i].mass/2;
+      }
+      if( field[i+1] && field[i+1].mass > 0){
+        newField[i] += {"mass":(field[i+1].mass/2)};
+      }
+    }*/
+    /*if( field[i+1] && field[i+1].mass > 0){
+      hasSameY = (Math.floor(i/width) == Math.floor((i+1)/width) );
+      if (hasSameY ){
+        if( ! newField[i] ) newField[i] = {"mass":0};
+        newField[i].mass += (field[i+1].mass / 8);
+        newField[i+1].mass -= (field[i+1].mass / 8);
+      }
+    }*/
+    if( field[i] && field[i].mass > 1e-15 ){
+      newField[i].mass = field[i].mass / 2;
+      for(j = 0; j < m.length; j++){
+        mi = i+m[j];
+        if( field[mi] && field[mi].mass > 1e-15 ){
+          if(!newField[mi]) newField[mi] = {"mass":0};
+          newField[mi].mass += field[i].mass / 8; // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
+        }
+      }
+    }
+  }
+
+  // for each field
+  /*for(i = 0; i < len; i++){
+    // assuming it exists
+    if( field[i] ){
+      newField[i] = {"mass": field[i].mass / 2};
+      // copy part of the "mass" from the surrounding fields
+      for(j = 0; j < m.length; j++){
+        mi = i+m[j];
+        if( field[mi] && field[mi].mass > 1e-15 ){
+          newField[i].mass += (field[mi].mass / 8); // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
+        }
+      }
+    }
+  }*/
+
+  //debugger;
+  this.field = newField;
 }
 
 function resolve_wrong_1(cell) {
