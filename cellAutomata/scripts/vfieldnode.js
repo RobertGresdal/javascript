@@ -1,10 +1,12 @@
 /**
 * @param {dimension} Array
 */
-function VField(dimensions){
+function VField(dimensions, topology){
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
   this.field = [];
   this.zoom = 30;
+
+  this._topology = topology;
 }
 
 function VFieldNode(dimension){
@@ -57,6 +59,48 @@ VField.prototype.render = function(ctx) {
   }
 }
 
+VField.prototype.resolve = function() {
+  var cells = this._topology.cells,
+  len = cells.length,
+  flen = this.field.length,
+  zoom = this.zoom,
+  cell, i, fx, fy;
+
+  // Reset field mass
+  for(i = 0; i < flen; i++){
+    this.field[i].mass = 0;
+  }
+  // Recalculate mass for field
+  for(i = 0; i < len; i++){
+    cell = cells[i];
+    // Find which field the cell is located in
+    fx = Math.floor( cell.x / zoom );
+    fy = Math.floor( cell.y / zoom );
+    //force = new Force(fx, fy, cell.mass);
+    this.field[(fx + fy * this.dim[1])].mass += cell.mass;
+  }
+}
+
+VField.prototype.propagate = function() {
+  // do a flawed propagation first, just move directly x and y
+  var forces = [],
+    len = this.forces.length;
+}
+
+function resolve_wrong_1(cell) {
+  var cells = this._topology.cells,
+    len = cells.length,
+    zoom = this.zoom,
+    cell, force, i, fx, fy;
+  for(i = 0; i < len; i++){
+    cell = cells[i];
+    // Find position relative to the field position
+    fx = ( cell.x % zoom ) - zoom/2;
+    fy = ( cell.y % zoom ) - zoom/2;
+    force = new Force(fx, fy, cell.mass);
+    //c[i]
+  }
+}
 
 VFieldNode.prototype.tick = function(){
   //if( this.cells.length > 4 ){
