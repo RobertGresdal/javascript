@@ -4,8 +4,10 @@
 function VField(dimensions, topology){
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
   //this.field = [];
-  this.field = [];
-  this.field.length = dimensions[0]*dimensions[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
+  this.field = {};
+  this.field.mass = [];
+  this.field.mass.length = this.dim[0]*this.dim[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
+  this.field.mass.fill(0);
   this.zoom = 30;
   this.options = {"showField":true};
 
@@ -47,11 +49,11 @@ VField.prototype.render = function(ctx) {
   ctx.strokeStyle = "#666600";
   ctx.strokeRect(0, 0, dim[0]*zoom, dim[1]*zoom);
 
-  var len = this.field.length;
+  var len = this.field.mass.length;
   for( i = 0; i < len; i++ ){
     x = i % dim[0];
     y = Math.floor( i / dim[0] );
-    pull = this.field[i] ? this.field[i].mass : 0;
+    pull = this.field.mass[i];
 
     ctx.fillStyle = "rgb(255,255,0,0.5)";
     ctx.fillRect(x*zoom, y*zoom, 1, 1);
@@ -73,16 +75,9 @@ VField.prototype.render = function(ctx) {
 VField.prototype.resolve = function() {
   var cells = this._topology.items,
   len = cells.length,
-  flen = this.field.length,
+  flen = this.field.mass.length,
   zoom = this.zoom,
   cell, i, fx, fy, fi;
-
-  // Reset field mass
-  // TODO: this can be done without looping over all indexes, but is it worth
-  // trading the few cpu cycles for the memory to remember which were changed last?
-  /*for(i = 0; i < flen; i++){
-    if( this.field[i] ) this.field[i].mass = 0;
-  }*/
 
   // Recalculate mass for field
   // For each cell, add its mass to the field
@@ -99,9 +94,9 @@ VField.prototype.resolve = function() {
     fi = (fx + fy * this.dim[0]);
     if( 0 <= fi && fi < flen ){
       // If the mass property doesn't exist, make it
-      if( ! this.field[fi] )this.field[fi] = {"mass":0};
 
-      this.field[fi].mass += cell.mass;
+      //this.field.items[fi].push(cell);
+      this.field.mass[fi] += cell.mass;
       // FIXME: ah, wait. we were supposed to add FORCES to the field
     }
     //debugger;
@@ -110,44 +105,35 @@ VField.prototype.resolve = function() {
 
 VField.prototype.propagate = function() {
   // do a flawed propagation first, just move directly x and y
-  var field = this.field,
-    newField = this.field.slice(0),
+  var field = this.field.mass,
+    newField = [],//this.field.mass.slice(0),
     len = (this.dim[0] * this.dim[1]),
     w = this.dim[0],
-    //h = this.dim[1],
-    //hasSameY,
     i, j, mi;
-  var m = [-w-1, -w, -w+1,
-             -1,        1,
-            w-1,  w,  w+1];/**/
-  //var m = [-w, -1];
-    //last, next, current;
-  //for(i = 0, last = null, next = field[i]; current = next; next = field[++i]){
-  // FIXME: don't copy value to right of current index == width-1
+  newField.length = field.length;
+  newField.fill(0);
+  var m  = [-w-1, -w, -w+1,
+              -1,  0,    1,
+             w-1,  w,  w+1];
+  var md = [ 12, 16, 12,
+             16,  8, 16,
+             12, 16, 12];
+
   for(i = 0; i < len; i++){
     // If the current field has mass
-    if( field[i] && field[i].mass > 1e-15 ){
+    if( field[i] > 1e-15 ){
       // For each surrounding field
       for(j = 0; j < m.length; j++){
-        mi = i+m[j];
+        mi = i + m[j];// m[j]%len for looping in y direction?
         if(mi < 0)continue;
-        if(mi > len)continue;
-        // If it's not defined, define it
-        if( !field[mi] ) newField[mi] = {"mass":0};
+        if(mi >= len)continue;
 
-        // Ignore the field if it has insignificant mass
-        if( field[i] && field[i].mass > 1e-15 ){
-          // Propagate some of its mass (should rename this to "pull" or something to indicate what we're propagating is the gravitational pull wave)
-          newField[mi].mass += field[i].mass / 16; // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
-        }
+        // Propagate some of its mass (should rename this to "pull" or something to indicate what we're propagating is the gravitational pull wave)
+        newField[mi] += field[i] / md[j]; // FIXME divide by amount set from different matrix that corresponds to how much it should get from the distance
       }
-      newField[i].mass = field[i].mass / 4;
-    } /*else {
-      if(newField[i]) newField[i].mass = 0;
-      else newField[i] = {"mass":0};
-    }*/
+    }
   }
-  this.field = newField;
+  this.field.mass = newField;
 }
 
 function resolve_wrong_1(cell) {
