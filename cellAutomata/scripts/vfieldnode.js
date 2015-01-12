@@ -116,7 +116,7 @@ VField.prototype.propagate = function() {
               -1,  0,    1,
              w-1,  w,  w+1];
   var md = [ 12, 16, 12,
-             16,  8, 16,
+             16,  4, 16,
              12, 16, 12];
 
   for(i = 0; i < len; i++){

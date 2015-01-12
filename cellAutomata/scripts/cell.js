@@ -56,8 +56,8 @@ function Particle(x, y, mass, vx, vy) {
 	this.x = x;
 	this.y = y;
 	this.mass = mass ? mass : Math.random()*60000 + 30000;
-	this.vx = vx ? vx : (Math.random()-0.5)*4;
-	this.vy = vy ? vy : (Math.random()-0.5)*4;
+	this.vx = vx ? vx : (Math.random()-0.5)*25;
+	this.vy = vy ? vy : (Math.random()-0.5)*25;
 	this._lastAppliedForce = {};
 	this._forces = [];
 
