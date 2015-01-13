@@ -55,13 +55,13 @@ function Particle(x, y, mass, vx, vy) {
 	this.options.relativity = false;
 	this.x = x;
 	this.y = y;
-	this.mass = mass ? mass : Math.random()*60000 + 30000;
-	this.vx = vx ? vx : (Math.random()-0.5)*25;
-	this.vy = vy ? vy : (Math.random()-0.5)*25;
+	this.vx = vx ? vx : (Math.random()-0.5)*10;
+	this.vy = vy ? vy : (Math.random()-0.5)*10;
+	this.mass = mass ? mass : 600000/Math.sqrt(this.vx*this.vx+this.vy*this.vy);
 	this._lastAppliedForce = {};
 	this._forces = [];
 
-	this._drawSize = Math.sqrt(this.mass-30000) / 16;
+	this._drawSize = Math.sqrt(this.mass) / 64;
 }
 Particle.prototype.merge = function(p2){
 	this.x = p2.x;
@@ -84,7 +84,7 @@ Particle.prototype.withinBounds = function(bounds) {
 	return true;
 }
 Particle.prototype.render = function(ctx) {
-	ctx.fillRect(this.x-this._drawSize/2, this.y-this._drawSize/2, this._drawSize/2, this._drawSize/2);
+	ctx.fillRect(this.x-this._drawSize/2, this.y-this._drawSize/2, this._drawSize, this._drawSize);
 }
 Particle.prototype.addForce = function(pos, F) {
 	//this._forces.push( {"vector":vector, "F":F} );
@@ -97,7 +97,7 @@ Particle.prototype.addForce = function(pos, F) {
 
 Particle.prototype.applyForce = function(t) {
 	//debugger;
-	t = 1; // TODO: reduce t the closer v is to c?  --c^2--? c=sqtr(v^2+t^2)?
+	t = .1; // TODO: reduce t the closer v is to c?  --c^2--? c=sqtr(v^2+t^2)?
 	// Huh, that means mass means nothing when considering how difficult it
 	// is to get close to c. Interesting.
 	if(this.options.relativity){

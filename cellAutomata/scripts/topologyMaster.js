@@ -12,8 +12,8 @@ function TopologyMaster(x, y, width, height) {
 	this.quadTree = null;
 	this.vfield = new VField_old1(this);
 	this.vfield_test = new VField(
-		[Math.floor(this.bounds.width/30),
-		 Math.floor(this.bounds.height/30)],
+		[Math.floor(this.bounds.width/20),
+		 Math.floor(this.bounds.height/20)],
 		this
 	);
 	this.options = { "showNodes":true, "pointQuad":false };
@@ -110,9 +110,12 @@ TopologyMaster.prototype.tick = function(t) {
 		//this.vfield.resolve(this);
 		//this.vfield.apply(this);
 
-		this.vfield_test.propagate();
-		this.vfield_test.resolve();
 
+		this.vfield_test.node.propagate();
+		this.vfield_test.node.resolve();
+		//if( this.vfield.worker.updated ){
+		//	this
+		//}
 
 		this.prune();
 

@@ -2,27 +2,39 @@
 * @param {dimension} Array
 */
 function VField(dimensions, topology){
+  this._topology = topology;
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
+
+  this.ready = true;
+  this.worker = new Worker("scripts/vFieldWorker.js");
+  this.worker.owner = this;
+  this.worker.result = {"field":[],"updated":false};
+  this.worker.onmessage = this.workerMessage;
+
   //this.field = [];
+  this.node = new VFieldNode(this.dim, topology);
+  /*this.field = {};
+  this.field.mass = [];
+  this.field.mass.length = this.dim[0]*this.dim[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
+  this.field.mass.fill(0);
+  this.field.dim = this.dim;*/
+
+  this.zoom = 20;
+  this.options = {"showField":true};
+}
+
+function VFieldNode(dimensions, topology){
+  this._topology = topology;
+  this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
+
   this.field = {};
   this.field.mass = [];
   this.field.mass.length = this.dim[0]*this.dim[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
   this.field.mass.fill(0);
-  this.zoom = 30;
+  this.field.dim = this.dim;
+
+  this.zoom = 20;
   this.options = {"showField":true};
-
-  this._topology = topology;
-
-  /*for(var i=0;i<this.field.length;i++){
-    this.field[i] = {"mass":0};
-  }*/
-}
-
-function VFieldNode(dimension){
-  this.cells = 0;
-  this.strength = 0;
-  this.forces = [];
-
   //this.field = new Array(dimension*dimension).fill(0);
 }
 
@@ -34,6 +46,10 @@ function Force(scalar, x, y){
   this._hypotenuse = Math.sqrt(this.x * this.x + this.y * this.y);
 }
 
+VField.prototype.workerMessage = function(e){
+  game.topo.vfield.worker.result.field = e.data.field;
+  game.topo.vfield.worker.result.updated = true;
+}
 
 VField.prototype.render = function(ctx) {
   var i, j,
@@ -49,11 +65,11 @@ VField.prototype.render = function(ctx) {
   ctx.strokeStyle = "#666600";
   ctx.strokeRect(0, 0, dim[0]*zoom, dim[1]*zoom);
 
-  var len = this.field.mass.length;
+  var len = this.node.field.mass.length;
   for( i = 0; i < len; i++ ){
     x = i % dim[0];
     y = Math.floor( i / dim[0] );
-    pull = this.field.mass[i];
+    pull = this.node.field.mass[i];
 
     ctx.fillStyle = "rgb(255,255,0,0.5)";
     ctx.fillRect(x*zoom, y*zoom, 1, 1);
@@ -72,7 +88,14 @@ VField.prototype.render = function(ctx) {
   }
 }
 
+VField.prototype.propagate = function() {
+  this.node.propagate();
+}
 VField.prototype.resolve = function() {
+  this.node.resolve();
+}
+
+VFieldNode.prototype.resolve = function() {
   var cells = this._topology.items,
   len = cells.length,
   flen = this.field.mass.length,
@@ -103,7 +126,10 @@ VField.prototype.resolve = function() {
   }
 }
 
-VField.prototype.propagate = function() {
+VFieldNode.prototype.propagate = function() {
+  // TODO: delay propagation by counting up to a number, for instance
+  // the same as zoom would make it propagate by 1px pr tick
+
   // do a flawed propagation first, just move directly x and y
   var field = this.field.mass,
     newField = [],//this.field.mass.slice(0),
@@ -118,6 +144,10 @@ VField.prototype.propagate = function() {
   var md = [ 12, 16, 12,
              16,  4, 16,
              12, 16, 12];
+  /**/
+  /*var m  = [-w,-1,0,1,w];
+  var md = [16,16,4,16,16]; // simplified, but more wrong
+  */
 
   for(i = 0; i < len; i++){
     // If the current field has mass
