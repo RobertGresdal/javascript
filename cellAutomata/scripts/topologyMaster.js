@@ -3,14 +3,14 @@
 */
 function TopologyMaster(x, y, width, height) {
 	this.ready = true;
+	this.updated = true;
 	this.wCells = new Worker("scripts/workerCells.js")
 	this.wCells.owner = this;
-	this.wResult = {"items":[], "updated":false};
+	this.wResult = {"items":[], "updated":true};
 	this.items = [];
 	this.size = 0;
 	this.bounds = { "x":x, "y":y, "width":width, "height":height };
 	this.quadTree = null;
-	this.vfield = new VField_old1(this);
 	this.vfield_test = new VField(
 		[Math.floor(this.bounds.width/20),
 		 Math.floor(this.bounds.height/20)],
@@ -25,8 +25,23 @@ TopologyMaster.prototype.workerMessage = function(e){
 	//console.log("message",e.data.items[0]);
 	//if(e.data.items.length > 0)debugger;
 	game.topo.wResult.items = e.data.items;
-	game.topo.ready = true;
+	game.topo.wResult.updated = true;
+	//game.topo.ready = true;
 	//if(game.topo.readyr;
+}
+
+TopologyMaster.prototype.isUpdated = function() {
+	return ( this.wResult.updated && this.vfield_test.updated );
+}
+
+TopologyMaster.prototype.isReady = function() {
+	if( this.wResult.updated && this.vfield_test.ready ){
+		this.ready == true;
+		this.updated == true;
+	} else {
+		this.ready == false;
+	}
+	return this.ready;
 }
 
 TopologyMaster.prototype.render = function(ctx) {
@@ -66,6 +81,7 @@ TopologyMaster.prototype.render = function(ctx) {
 TopologyMaster.prototype.add = function(item) {
 	this.items.push(item);
 	this.size = this.items.length;
+	this.vfield_test.node.items = this.items;
 }
 
 /**
@@ -87,7 +103,7 @@ TopologyMaster.prototype.init = function() {
 	this.wCells.postMessage({"items":this.items});
 }
 TopologyMaster.prototype.tick = function(t) {
-	if(this.ready){
+	if(this.isUpdated()){
 		this.ready = false;
 		var self=this, end = 0;
 
@@ -111,11 +127,11 @@ TopologyMaster.prototype.tick = function(t) {
 		//this.vfield.apply(this);
 
 
-		this.vfield_test.node.propagate();
-		this.vfield_test.node.resolve();
-		//if( this.vfield.worker.updated ){
-		//	this
-		//}
+		//this.vfield_test.node.propagate();
+		//this.vfield_test.node.resolve();
+		/*if( this.vfield.worker.updated ){
+			this.
+		}*/
 
 		this.prune();
 
@@ -124,6 +140,7 @@ TopologyMaster.prototype.tick = function(t) {
 		//if(this.items.length > 0)debugger;
 		//console.log("Ready to calculate particles: ", this.items);
 		this.wCells.postMessage({"items":this.items});
+		this.vfield_test.update();
 	}
 	return this.ready;
 }
@@ -153,6 +170,7 @@ TopologyMaster.prototype.prune = function() {
 	}
 	this.items = newItems;
 	this.size = this.items.length;
+	this.vfield_test.node.items = this.items;
 
 	// TODO: get all children not in the root, then take them away from the total
 	// list, leaving you with all the edge cases. no more checking items well

@@ -117,8 +117,8 @@ Game.prototype.tick = function(t) {
 			this.topo.add( p );
 			//this.topo.add( p_i );
 		}
-		//if( this.topo.ready )
-			this.topo.tick(t);
+
+		this.topo.tick(t);
 
 		//this.topo.prune();
 		//this.mouse.particle = this.topo.closestToMouse(game.mouse);
@@ -132,9 +132,9 @@ Game.prototype.tick = function(t) {
 Game.prototype.render = function() {
 		var c = this.context;
 		//c.fillStyle = "rgba(0,0,0, .05)";
-		c.fillStyle = "rgb(10,10,10)";
+		c.fillStyle = "rgba(10,10,10,1)";
 		c.fillRect(0, 0, this.width, this.height);
-		c.fillStyle = "rgb(0,0,0)";
+		c.fillStyle = "rgba(0,0,0,1)";
 		c.fillRect(0, 0, 150, 80);
 
 		this.topo.render(c);
@@ -142,29 +142,6 @@ Game.prototype.render = function() {
 
 		c.fillStyle = "black";
 		c.font = "9pt DejaVu Sans";
-
-		// FPS Graph
-		if ( this.settings.showFPSGraph ) {
-			c.save();
-			c.strokeStyle = "white";
-			c.lineWidth = 1;
-			c.fillStyle = "#113";
-			var graphLeft = (this.width - 205),
-				graphTop = 5,
-				graphBottom = 10,
-				graphHeight = 50,
-				graphWidth = 200;
-
-			c.fillRect(graphLeft, graphTop, graphWidth, graphHeight);
-			for (var i = 0, len = this.fpsCounter.length; i < len; i++) {
-				c.moveTo(graphLeft + i * 2 + 0.5, graphBottom);
-				c.lineTo(graphLeft + i * 2 + 0.5, graphBottom + this.fpsCounter[i]);
-				c.stroke();
-			}
-			c.strokeRect(graphLeft, graphTop, graphWidth, graphHeight);
-
-			c.restore();
-		}
 
 		// FPS counter (text)
 		c.fillStyle = "white";
@@ -184,7 +161,7 @@ Game.prototype.render = function() {
 			c.fillText(" ax:" + p.vx + ", ay:" + p.ay, 10,140);
 			c.fillText(" mass:" + p.mass + " }", 10,160);
 		}*/
-		
+
 		//c.fillText(this.kdTree.balanceFactor(),10,80);
 		/*for (var i = 0, d; d = this.root.cells[i]; i++) {
 			// Fetch color settings and size of circle
@@ -202,7 +179,9 @@ Game.prototype.step = function(timestamp) {
 
 	this.runtime += diff;
 
-	this.render();
+	if( this.topo.updated ){
+		this.render();
+	}
 
 	this.steps = 0;
 	while ( this.timer < (this.runtime - this.stepAccuracy) ) {

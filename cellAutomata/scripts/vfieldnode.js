@@ -6,72 +6,96 @@ function VField(dimensions, topology){
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
 
   this.ready = true;
+  this.updated = true;
   this.worker = new Worker("scripts/vFieldWorker.js");
   this.worker.owner = this;
   this.worker.result = {"field":[],"updated":false};
-  this.worker.onmessage = this.workerMessage;
+  this.worker.onmessage = this._onmessage;
+  this.worker.postMessage({"action":"init", "dim":this.dim, "items":[]});
 
-  //this.field = [];
-  this.node = new VFieldNode(this.dim, topology);
-  /*this.field = {};
-  this.field.mass = [];
-  this.field.mass.length = this.dim[0]*this.dim[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
-  this.field.mass.fill(0);
-  this.field.dim = this.dim;*/
+  this.node = new VFieldNode(this.dim, []);
 
   this.zoom = 20;
   this.options = {"showField":true};
+
+  this._canvas = document.createElement('canvas');
+  this._canvas.width = this.dim[0]*this.zoom;
+  this._canvas.height = this.dim[1]*this.zoom;
+  this._context = this._canvas.getContext('2d');
 }
 
-function VFieldNode(dimensions, topology){
-  this._topology = topology;
+function VFieldNode(dimensions, items){
+  //this._topology = topology;
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
+
+  this.items = items ? items : [];
 
   this.field = {};
   this.field.mass = [];
-  this.field.mass.length = this.dim[0]*this.dim[1]; // new Array(dimensions[0]*dimensions[1]).fill(0);
+  this.field.mass.length = this.dim[0]*this.dim[1]; // new Array(dimensions[0]*dimensions[1]).fill(0); // TODO: which is faster?
   this.field.mass.fill(0);
   this.field.dim = this.dim;
 
   this.zoom = 20;
   this.options = {"showField":true};
-  //this.field = new Array(dimension*dimension).fill(0);
 }
 
 function Force(scalar, x, y){
   this.scalar = scalar ? scalar : 0;
   this.x = x ? x : 0;
   this.y = y ? y : 0;
-
-  this._hypotenuse = Math.sqrt(this.x * this.x + this.y * this.y);
 }
 
-VField.prototype.workerMessage = function(e){
-  game.topo.vfield.worker.result.field = e.data.field;
-  game.topo.vfield.worker.result.updated = true;
+VField.prototype._onmessage = function(e){
+  //game.topo.vfield.worker.result.field = e.data.field;
+  if( e.data.field ){
+    game.topo.vfield_test.node.field = e.data.field;
+    game.topo.vfield_test.worker.result.updated = true;
+    game.topo.vfield_test.ready = true;
+    game.topo.vfield_test.updated = true;
+  } else {
+    console.error("Don't recognize the message: ", e.data)
+  }
+}
+
+VField.prototype.update = function(callback){
+  // Only put more labor on the worker if it's not busy
+  if( this.updated == true ) {
+    this.ready = false;
+    this.updated = false;
+    this.worker.postMessage({"action":"update", "items":this.node.items});
+
+    console.log("message sent"); // TODO: remove
+  } else return false;
+  return true;
 }
 
 VField.prototype.render = function(ctx) {
   var i, j,
-  pull = 0,
-  zoom = this.zoom,
-  mid = this.zoom/12,
-  offset,
-  size,
-  alpha,
-  alpha_max_strength = 50,
-  dim = this.dim;
+    pull = 0,
+    zoom = this.zoom,
+    mid = this.zoom/12,
+    offset,
+    size,
+    alpha,
+    alpha_max_strength = 50,
+    dim = this.dim
+    cd = this._contextData;
 
   ctx.strokeStyle = "#666600";
   ctx.strokeRect(0, 0, dim[0]*zoom, dim[1]*zoom);
 
+  ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
+  //ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
   var len = this.node.field.mass.length;
   for( i = 0; i < len; i++ ){
+    pull = this.node.field.mass[i];
+    if (pull < 10) continue;
+
     x = i % dim[0];
     y = Math.floor( i / dim[0] );
-    pull = this.node.field.mass[i];
 
-    ctx.fillStyle = "rgb(255,255,0,0.5)";
+
     ctx.fillRect(x*zoom, y*zoom, 1, 1);
 
     if( this.options.showField ){
@@ -80,10 +104,12 @@ VField.prototype.render = function(ctx) {
       size.clamp(0,this.zoom*1.1);
       alpha.clamp(0,1);
 
-      ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
+      //ctx.save();
+      //ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
       //ctx.fillStyle = "green";
       offset = (zoom - size)/2;
       ctx.fillRect(x*zoom+offset, y*zoom+offset, size, size);
+      //ctx.restore();
     }
   }
 }
@@ -91,12 +117,13 @@ VField.prototype.render = function(ctx) {
 VField.prototype.propagate = function() {
   this.node.propagate();
 }
+
 VField.prototype.resolve = function() {
   this.node.resolve();
 }
 
 VFieldNode.prototype.resolve = function() {
-  var cells = this._topology.items,
+  var cells = this.items,
   len = cells.length,
   flen = this.field.mass.length,
   zoom = this.zoom,
@@ -141,9 +168,9 @@ VFieldNode.prototype.propagate = function() {
   var m  = [-w-1, -w, -w+1,
               -1,  0,    1,
              w-1,  w,  w+1];
-  var md = [ 12, 16, 12,
-             16,  4, 16,
-             12, 16, 12];
+  var md = [ 16, 16, 16,
+             16,2e32, 16,
+             16, 16, 16];
   /**/
   /*var m  = [-w,-1,0,1,w];
   var md = [16,16,4,16,16]; // simplified, but more wrong
@@ -164,6 +191,21 @@ VFieldNode.prototype.propagate = function() {
     }
   }
   this.field.mass = newField;
+}
+
+VFieldNode.prototype.merge = function(node) {
+  // topology is a special case, we want to keep referring to the current
+  // topology if the other node has none.
+  if( node._topology ){
+    this._topology = node._topology;
+  }
+  this.dim = node.dim;
+
+  this.field.mass = node.field.mass;
+  this.field.dim = node.field.dim;
+
+  this.zoom = node.zoom;
+  this.options = node.options;
 }
 
 function resolve_wrong_1(cell) {
