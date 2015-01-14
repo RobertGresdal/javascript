@@ -2,8 +2,11 @@
 * @param {dimension} Array
 */
 function VField(dimensions, topology){
+  const zoom = 10;
+
   this._topology = topology;
   this.dim = (dimensions instanceof Array) ? dimensions : [3,3]; // default size i 3*3
+  this.zoom = zoom;
 
   this.ready = true;
   this.updated = true;
@@ -14,14 +17,15 @@ function VField(dimensions, topology){
   this.worker.postMessage({"action":"init", "dim":this.dim, "items":[]});
 
   this.node = new VFieldNode(this.dim, []);
+  this.node.zoom = this.zoom;
 
-  this.zoom = 20;
   this.options = {"showField":true};
 
-  this._canvas = document.createElement('canvas');
+  /*this._canvas = document.createElement('canvas');
   this._canvas.width = this.dim[0]*this.zoom;
   this._canvas.height = this.dim[1]*this.zoom;
   this._context = this._canvas.getContext('2d');
+  this._imageData = this._context.createImageData(this.dim[0], this.dim[1]);*/
 }
 
 function VFieldNode(dimensions, items){
@@ -36,7 +40,7 @@ function VFieldNode(dimensions, items){
   this.field.mass.fill(0);
   this.field.dim = this.dim;
 
-  this.zoom = 20;
+  this.zoom = 10;
   this.options = {"showField":true};
 }
 
@@ -49,10 +53,10 @@ function Force(scalar, x, y){
 VField.prototype._onmessage = function(e){
   //game.topo.vfield.worker.result.field = e.data.field;
   if( e.data.field ){
-    game.topo.vfield_test.node.field = e.data.field;
-    game.topo.vfield_test.worker.result.updated = true;
-    game.topo.vfield_test.ready = true;
-    game.topo.vfield_test.updated = true;
+    game.topo.vfield.node.field = e.data.field;
+    game.topo.vfield.worker.result.updated = true;
+    game.topo.vfield.ready = true;
+    game.topo.vfield.updated = true;
   } else {
     console.error("Don't recognize the message: ", e.data)
   }
@@ -64,13 +68,43 @@ VField.prototype.update = function(callback){
     this.ready = false;
     this.updated = false;
     this.worker.postMessage({"action":"update", "items":this.node.items});
-
-    console.log("message sent"); // TODO: remove
   } else return false;
   return true;
 }
 
-VField.prototype.render = function(ctx) {
+/*VField.prototype._fastFillData = function(x,y,width,height,color) {
+  var w = this.dim[0],
+    di=0,
+    data = this._imageData
+    rowData = [];
+  rowData.length = Math.floor(width);
+  rowData.fill(color);
+
+  for(var i=0; i<width; i++) {
+    for(var j=0;j<height;j++){
+      di = (x + j*w)*4;
+      data[di][0] = color[0];
+      data[di][1] = color[1];
+      data[di][2] = color[2];
+      data[di][3] = color[3];
+      //data.splice(di, 4, color);
+    }
+
+    //data.splice(dx, rowData.length, rowData)
+  }
+}*/
+
+VField.prototype.render = function(ctx){
+  if( this.options.showField ){
+    this.fills = 0;
+    ctx.fillStyle = "rgba(0,255,0,0.1)";
+    _drawField.call(this, ctx);
+  }
+}
+
+function _oldRender(ctx) {
+  if( ! this.options.showField ) return;
+
   var i, j,
     pull = 0,
     zoom = this.zoom,
@@ -81,11 +115,11 @@ VField.prototype.render = function(ctx) {
     alpha_max_strength = 50,
     dim = this.dim
     cd = this._contextData;
+  this.fills = 0;
+  //ctx.strokeStyle = "#666600";
+  //ctx.strokeRect(0, 0, dim[0]*zoom, dim[1]*zoom);
 
-  ctx.strokeStyle = "#666600";
-  ctx.strokeRect(0, 0, dim[0]*zoom, dim[1]*zoom);
-
-  ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
+  //ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
   //ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
   var len = this.node.field.mass.length;
   for( i = 0; i < len; i++ ){
@@ -98,19 +132,53 @@ VField.prototype.render = function(ctx) {
 
     ctx.fillRect(x*zoom, y*zoom, 1, 1);
 
-    if( this.options.showField ){
-      alpha = (Math.log(pull) / alpha_max_strength);
-      size = Math.log(pull*pull/10);
-      size.clamp(0,this.zoom*1.1);
-      alpha.clamp(0,1);
+    //if( this.options.showField ){
+    alpha = (Math.log(pull) / alpha_max_strength);
+    size = Math.log(pull*pull/10);
+    size.clamp(0,this.zoom*1.1);
+    alpha.clamp(0,1);
 
-      //ctx.save();
-      //ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
-      //ctx.fillStyle = "green";
-      offset = (zoom - size)/2;
-      ctx.fillRect(x*zoom+offset, y*zoom+offset, size, size);
-      //ctx.restore();
-    }
+    //ctx.save();
+    //ctx.fillStyle = "rgba(0, 255, 0, "+alpha+")";
+    //ctx.fillStyle = "green";
+    offset = (zoom - size)/2;
+    ctx.fillRect(x*zoom+offset, y*zoom+offset, size, size);
+    //ctx.restore();*/
+    /*ix = x*zoom+offset;
+    iy = y*zoom+offset;
+    //this._fastFillData(ix. iy, size, size, [0,255,0,50]);
+    ctx.fillRect(x+Math.random()*100, y+Math.random()*100, 10,10);*/
+    this.fills++;
+    //}
+    //ctx.putImageData(this._imageData, 0, 0)
+  }
+}
+
+function _drawField(ctx){
+  var i,
+    pull = 0,
+    offset,
+    size,
+    alpha;
+
+  var len = this.node.field.mass.length;
+  for( i = 0; i < len; i++ ){
+    pull = this.node.field.mass[i];
+    if (pull < 10) continue;
+
+    x = i % this.dim[0];
+    y = Math.floor( i / this.dim[0] );
+
+    //alpha = (Math.log(pull) / 50);
+    size = Math.log(pull*pull/10);
+    //size.clamp(0,this.zoom*1.1);
+    size = Math.min(size, this.zoom*2);
+    //alpha.clamp(0,1);
+    //alpha = Math.min(alpha, 1);
+    offset = (this.zoom - size)/2;
+
+    ctx.fillRect(x*this.zoom+offset, y*this.zoom+offset, size, size);
+    this.fills++;
   }
 }
 
@@ -143,9 +211,6 @@ VFieldNode.prototype.resolve = function() {
     //force = new Force(fx, fy, cell.mass);
     fi = (fx + fy * this.dim[0]);
     if( 0 <= fi && fi < flen ){
-      // If the mass property doesn't exist, make it
-
-      //this.field.items[fi].push(cell);
       this.field.mass[fi] += cell.mass;
       // FIXME: ah, wait. we were supposed to add FORCES to the field
     }
@@ -168,9 +233,10 @@ VFieldNode.prototype.propagate = function() {
   var m  = [-w-1, -w, -w+1,
               -1,  0,    1,
              w-1,  w,  w+1];
-  var md = [ 16, 16, 16,
-             16,2e32, 16,
-             16, 16, 16];
+  // diagonals should be ~1,4142 larger than hor/vertical lines to approximate a circle
+  var md = [ 12,    8, 12,
+              8, 2e32,  8,
+             12,    8, 12];
   /**/
   /*var m  = [-w,-1,0,1,w];
   var md = [16,16,4,16,16]; // simplified, but more wrong
@@ -208,31 +274,11 @@ VFieldNode.prototype.merge = function(node) {
   this.options = node.options;
 }
 
-function resolve_wrong_1(cell) {
-  var cells = this._topology.cells,
-    len = cells.length,
-    zoom = this.zoom,
-    cell, force, i, fx, fy;
-  for(i = 0; i < len; i++){
-    cell = cells[i];
-    // Find position relative to the field position
-    fx = ( cell.x % zoom ) - zoom/2;
-    fy = ( cell.y % zoom ) - zoom/2;
-    force = new Force(fx, fy, cell.mass);
-    //c[i]
-  }
-}
-
 VFieldNode.prototype.tick = function(){
   //if( this.cells.length > 4 ){
 
   //}
 }
-
-VFieldNode.prototype.getForces = function(){
-
-}
-
 
 
 function Vector(x,y){

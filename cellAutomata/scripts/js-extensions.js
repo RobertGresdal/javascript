@@ -26,10 +26,26 @@ Math.prototype.zero = function(d) {
 */
 Array.prototype.fill = function( val ) {
   var len = this.length, i;
-  for( i = 0; i < len; i++){
-    this[i] = val;
+
+  if(val instanceof Array){
+    for( i = len-1; i >= 0; i--){
+      this.push(val);
+    }
+  } else {
+    for( i = 0; i < len; i++){
+      this[i] = val;
+    }
   }
   return this;
+}
+
+Array.prototype.average = function(arr) {
+  if(!arr) arr = this;
+  var len =  arr.length, i, avg = 0;
+  for( i = 0; i < len; i++ ) {
+    avg += arr[i];
+  }
+  return avg / len;
 }
 
 Number.prototype.clamp = function(min, max) {

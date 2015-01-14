@@ -6,9 +6,7 @@
 			var check = new Readycheck();
 			check.loadScript([
 					'scripts/js-extensions.js',
-					'scripts/vfield.js',
 					'scripts/vfieldnode.js',
-					//'scripts/topology.js',
 					'scripts/topologyMaster.js',
 			    'scripts/cell.js',
 			    'scripts/Timer.js',
@@ -26,6 +24,7 @@
 				//document.querySelector("#prune").addEventListener('click',function(){game.topo.prune()});
 				document.querySelector("#FPSGraph").addEventListener('change',function(){game.settings.showFPSGraph = this.checked;});
 				document.querySelector("#showNodes").addEventListener('change',function(){game.settings.showNodes = this.checked;});
+				document.querySelector("#showVField").addEventListener('change',function(){game.topo.vfield.options.showField = this.checked;});
 
 				//game.init();
 				game.start();
@@ -59,6 +58,7 @@
 	<div class="options">
 		<label><input type="checkbox" id="FPSGraph" disabled /> Show FPS Graph</label>
 		<label><input type="checkbox" id="showNodes" disabled /> Show node quads</label>
+		<label><input type="checkbox" id="showVField" checked /> Show gravity strength</label>
 	</div>
 	<div>
 		<input type="button" id="run" value="Run / Pause"/>

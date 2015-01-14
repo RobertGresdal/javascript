@@ -21,6 +21,10 @@ function Game() {
 	/** Counts the ms between the last 5 frames */
 	this.fpsCounter = [0,0,0,0,0];
 	this.fpsIndex = -1;
+	this._renderCalls = 0;
+	this._renderCallsPerSecond = 0;
+	this._renderCallCount = 0;
+	this._renderLastTime = +new Date;
 	/** Count upwards towards the rtc for the step counter, so we know when to
 	* run a simulation step */
 	this.stepCatchupRTC = null;
@@ -59,6 +63,7 @@ Game.prototype.init = function() {
 		canvas.width = this.width;
 		canvas.height = this.height;
 		this.context = canvas.getContext("2d");
+		this.context.translate(0.5,0.5);
 		this.context.strokeStyle = "white";
 		this.context.fillStyle = "black";
 
@@ -145,14 +150,19 @@ Game.prototype.render = function() {
 
 		// FPS counter (text)
 		c.fillStyle = "white";
-		var fps = this.fpsCounter.reduce(function(a, b) { return a ? (a + b) : b }) / this.fpsCounter.length;
+		//var fps = this.fpsCounter.reduce(function(a, b) { return a ? (a + b) : b }) / this.fpsCounter.length;
+		var fps = this.fpsCounter.average();
 		c.fillText((1000/fps).toLocaleString(), 10, 20);
+		//c.fillText((this._renderCallsPerSecond).toLocaleString(), 10, 20);
 
 		c.fillText(this.runtime, 10, 40);
 		c.fillText('Particles: ' + this.topo.size, 10, 60);
 
 		//c.fillText('energy: '+this.energy.toLocaleString(), 10, 80);
-		if(this.mouse)c.fillText(this.mouse.x +", "+this.mouse.y, 10,80);
+		if(this.mouse)c.fillText("["+this.mouse.x +", "+this.mouse.y+"]", 10,80);
+
+		c.fillText("Fills: "+this.topo.vfield.fills, 10,100);
+		c.fillText("Field size: "+this.topo.vfield.node.field.mass.length, 10,120);
 
 		/*if(this.mouse && this.mouse.particle && this.mouse.particle[0]){
 			var p = this.mouse.particle[0];
@@ -180,6 +190,8 @@ Game.prototype.step = function(timestamp) {
 	this.runtime += diff;
 
 	if( this.topo.updated ){
+		//this._renderCallsPerSecond = (1000/(now - this._renderLastTime));
+		//this._renderLastTime = +new Date;
 		this.render();
 	}
 
